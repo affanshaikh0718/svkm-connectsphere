@@ -49,7 +49,12 @@ export class AuthService {
         status: UserStatus.ACTIVE, // active for seamless development testing
         emailVerified: true,
         profile: {
-          create: {},
+          create: {
+            headline: dto.roleType
+              ? `${dto.roleType === 'STUDENT' ? 'Student' : dto.roleType === 'ALUMNI' ? 'Alumnus/Alumna' : dto.roleType === 'FACULTY' ? 'Faculty Member' : 'Campus Recruiter'} | ${dto.institution || 'SVKM Ecosystem'}`
+              : (dto.institution ? `Member @ ${dto.institution}` : 'Member of SVKM Professional Ecosystem'),
+            location: 'Mumbai, Maharashtra',
+          },
         },
         privacySettings: {
           create: {},

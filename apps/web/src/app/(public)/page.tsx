@@ -100,110 +100,177 @@ export default function LandingPage() {
         {/* Participating SVKM Colleges Ticker/Grid */}
         <div className="mt-14 w-full">
           <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-4">
-            Connecting premier institutions across the SVKM family
+            Connecting premier institutions across the SVKM family (Click to Join your College)
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SVKM_COLLEGES.map((col) => (
-              <div
+              <Link
                 key={col.name}
-                className="p-3 rounded-lg border border-border/60 bg-card/60 hover:bg-card transition-colors text-left"
+                href={`/register?college=${encodeURIComponent(col.name)}`}
+                className="group p-3 rounded-lg border border-border/60 bg-card/60 hover:bg-card hover:border-primary/50 transition-all text-left block cursor-pointer hover:shadow-sm"
               >
-                <div className="font-bold text-sm text-foreground">{col.name}</div>
-                <div className="text-[11px] text-muted-foreground line-clamp-1">{col.fullName}</div>
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{col.name}</div>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <div className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{col.fullName}</div>
                 <div className="text-[10px] text-primary/80 mt-1 font-medium">{col.location}</div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
 
         {/* 4 Core Pillars for SVKM Ecosystem */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-16 w-full text-left">
-          <Card className="border-border/60 shadow-sm bg-card hover:border-primary/40 transition-colors">
+          <Card className="border-border/60 shadow-sm bg-card hover:border-blue-500/40 transition-colors flex flex-col justify-between">
             <CardContent className="pt-6">
               <div className="h-10 w-10 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center mb-4">
                 <GraduationCap className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-base mb-1.5">For Students</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                 Showcase technical capstones, find hackathon teammates, prepare for technical interviews, and apply for verified campus drives.
               </p>
+              <div className="flex flex-col gap-2 mt-auto">
+                <Link href="/register?role=STUDENT">
+                  <Button size="sm" className="w-full text-xs font-semibold">
+                    Join as Student <ArrowRight className="ml-1.5 h-3 w-3" />
+                  </Button>
+                </Link>
+                <Link href="/jobs">
+                  <Button size="sm" variant="ghost" className="w-full text-xs text-muted-foreground hover:text-foreground">
+                    View Placement Drives
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 shadow-sm bg-card hover:border-emerald-500/40 transition-colors">
+          <Card className="border-border/60 shadow-sm bg-card hover:border-emerald-500/40 transition-colors flex flex-col justify-between">
             <CardContent className="pt-6">
               <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4">
                 <Award className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-base mb-1.5">For Alumni</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                 Reconnect with your college batch, mentor promising juniors, post career opportunities, and share company referrals.
               </p>
+              <div className="flex flex-col gap-2 mt-auto">
+                <Link href="/register?role=ALUMNI">
+                  <Button size="sm" className="w-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">
+                    Join as Alumnus <ArrowRight className="ml-1.5 h-3 w-3" />
+                  </Button>
+                </Link>
+                <Link href="/network">
+                  <Button size="sm" variant="ghost" className="w-full text-xs text-muted-foreground hover:text-foreground">
+                    Connect Network
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 shadow-sm bg-card hover:border-purple-500/40 transition-colors">
+          <Card className="border-border/60 shadow-sm bg-card hover:border-purple-500/40 transition-colors flex flex-col justify-between">
             <CardContent className="pt-6">
               <div className="h-10 w-10 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center mb-4">
                 <Users className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-base mb-1.5">For Faculty & Staff</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                 Publish departmental achievements, announce inter-collegiate symposiums, and connect research scholars with industry partners.
               </p>
+              <div className="flex flex-col gap-2 mt-auto">
+                <Link href="/register?role=FACULTY">
+                  <Button size="sm" className="w-full text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white">
+                    Join as Faculty <ArrowRight className="ml-1.5 h-3 w-3" />
+                  </Button>
+                </Link>
+                <Link href="/home">
+                  <Button size="sm" variant="ghost" className="w-full text-xs text-muted-foreground hover:text-foreground">
+                    Browse Announcements
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 shadow-sm bg-card hover:border-amber-500/40 transition-colors">
+          <Card className="border-border/60 shadow-sm bg-card hover:border-amber-500/40 transition-colors flex flex-col justify-between">
             <CardContent className="pt-6">
               <div className="h-10 w-10 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4">
                 <Briefcase className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-base mb-1.5">For Recruiters</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                 Coordinate directly with SVKM placement teams, recruit vetted engineering & management talent, and post internship drives.
               </p>
+              <div className="flex flex-col gap-2 mt-auto">
+                <Link href="/register?role=RECRUITER">
+                  <Button size="sm" className="w-full text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white">
+                    Recruiter Sign Up <ArrowRight className="ml-1.5 h-3 w-3" />
+                  </Button>
+                </Link>
+                <Link href="/jobs">
+                  <Button size="sm" variant="ghost" className="w-full text-xs text-muted-foreground hover:text-foreground">
+                    Placement Portal
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Feature Highlights Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12 w-full text-left">
-          <Card className="border-border/50 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
-                <Network className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-base mb-1.5">SVKM Social Graph</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Build 1st-degree connections across SVKM colleges, chat in real-time with WebSockets, and share posts with rich engagement.
-              </p>
-            </CardContent>
-          </Card>
+          <Link href="/network" className="block group">
+            <Card className="border-border/50 shadow-sm h-full group-hover:border-primary/50 transition-colors cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
+                  <Network className="h-5 w-5" />
+                </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-bold text-base group-hover:text-primary transition-colors">SVKM Social Graph</h3>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Build 1st-degree connections across SVKM colleges, chat in real-time with WebSockets, and share posts with rich engagement.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="border-border/50 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4">
-                <Briefcase className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-base mb-1.5">Campus Placement Portal</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Discover internship and full-time job openings tailored specifically for SVKM students, track statuses, and submit applications.
-              </p>
-            </CardContent>
-          </Card>
+          <Link href="/jobs" className="block group">
+            <Card className="border-border/50 shadow-sm h-full group-hover:border-emerald-500/50 transition-colors cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4">
+                  <Briefcase className="h-5 w-5" />
+                </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-bold text-base group-hover:text-emerald-600 transition-colors">Campus Placement Portal</h3>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Discover internship and full-time job openings tailored specifically for SVKM students, track statuses, and submit applications.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="border-border/50 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center mb-4">
-                <Bot className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-base mb-1.5">Python Intelligence Service</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Feed candidate scoring, resume skill extraction, and job compatibility calculation powered by FastAPI algorithms.
-              </p>
-            </CardContent>
-          </Card>
+          <Link href="/home" className="block group">
+            <Card className="border-border/50 shadow-sm h-full group-hover:border-purple-500/50 transition-colors cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="h-10 w-10 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center mb-4">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-bold text-base group-hover:text-purple-600 transition-colors">Python Intelligence Service</h3>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Feed candidate scoring, resume skill extraction, and job compatibility calculation powered by FastAPI algorithms.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </main>
 

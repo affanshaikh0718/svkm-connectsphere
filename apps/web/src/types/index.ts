@@ -356,6 +356,8 @@ export interface RegisterData {
   password: string;
   confirmPassword?: string;
   acceptTerms?: boolean;
+  institution?: string;
+  roleType?: string;
 }
 
 export interface AuthTokens {

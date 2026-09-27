@@ -4,7 +4,7 @@ import type { ApiResponse, CursorPaginatedResponse, Post, Comment } from '@/type
 export const postsService = {
   async getFeed(cursor?: string): Promise<CursorPaginatedResponse<Post>> {
     const params = cursor ? `?cursor=${cursor}` : '';
-    const response = await apiClient.get<CursorPaginatedResponse<Post>>(`/posts/feed${params}`);
+    const response = await apiClient.get<CursorPaginatedResponse<Post>>(`/feed${params}`);
     return response.data;
   },
 
