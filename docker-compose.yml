@@ -1,0 +1,95 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cs_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: connectsphere
+      POSTGRES_USER: cs_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cs_secret_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cs_user -d connectsphere"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cs_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-cs_redis_secret}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-cs_redis_secret}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  python-service:
+    build:
+      context: ./apps/python-service
+      dockerfile: Dockerfile
+    container_name: cs_python_service
+    restart: unless-stopped
+    environment:
+      PYTHON_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-cs_internal_service_secret_2026}
+      PYTHON_API_URL: http://api:4000
+      PYTHON_HOST: 0.0.0.0
+      PYTHON_PORT: 8000
+    ports:
+      - "8000:8000"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: cs_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      FRONTEND_URL: http://localhost:3000
+      ALLOWED_ORIGINS: http://localhost:3000
+      DATABASE_URL: postgresql://cs_user:${DB_PASSWORD:-cs_secret_password}@postgres:5432/connectsphere
+      REDIS_URL: redis://:${REDIS_PASSWORD:-cs_redis_secret}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-cs_super_secret_jwt_key_development_2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cs_super_secret_refresh_key_development_2026}
+      PYTHON_SERVICE_URL: http://python-service:8000
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-cs_internal_service_secret_2026}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      python-service:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: cs_web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_WS_URL: ws://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
