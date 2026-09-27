@@ -4,8 +4,14 @@ import type { ApiResponse, CursorPaginatedResponse, Post, Comment } from '@/type
 export const postsService = {
   async getFeed(cursor?: string): Promise<CursorPaginatedResponse<Post>> {
     const params = cursor ? `?cursor=${cursor}` : '';
-    const response = await apiClient.get<CursorPaginatedResponse<Post>>(`/feed${params}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<{ posts: Post[] }>>(`/feed${params}`);
+    const posts = response.data?.data?.posts;
+
+    return {
+      success: response.data?.success ?? true,
+      data: Array.isArray(posts) ? posts : [],
+      hasMore: false,
+    };
   },
 
   async getPost(id: string): Promise<Post> {

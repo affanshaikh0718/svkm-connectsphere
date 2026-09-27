@@ -7,8 +7,8 @@ const AUTH_PATHS = ['/home', '/network', '/messages', '/notifications', '/jobs',
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Read token from cookies (set during login)
-  const token = request.cookies.get('accessToken')?.value;
+  // Read the refresh token cookie set by the auth endpoints
+  const token = request.cookies.get('refreshToken')?.value;
   const isAuthenticated = Boolean(token);
 
   const isPublicPath = PUBLIC_PATHS.some(

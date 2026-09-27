@@ -15,9 +15,7 @@ export default function HomePage() {
     try {
       setIsLoading(true);
       const res = await postsService.getFeed();
-      if (res?.data) {
-        setPosts(res.data);
-      }
+      setPosts(Array.isArray(res?.data) ? res.data : []);
     } catch {
       // fallback
     } finally {
