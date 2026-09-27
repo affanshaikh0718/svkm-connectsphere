@@ -23,7 +23,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run pytest
         working-directory: apps/python-service
-        run: pytest tests/ -v
+        run: python -m pytest tests/ -v
 
   api-lint-and-build:
     name: Build NestJS API
