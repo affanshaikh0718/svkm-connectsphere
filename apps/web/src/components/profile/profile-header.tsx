@@ -26,6 +26,8 @@ import {
 import toast from 'react-hot-toast';
 import { ContactInfoModal } from './contact-info-modal';
 import { EditProfileModal } from './edit-profile-modal';
+import { ChatModal } from './chat-modal';
+import { messagingService } from '@/services/messaging.service';
 
 interface ProfileHeaderProps {
   user: {
@@ -72,6 +74,9 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [chatConversationId, setChatConversationId] = useState<string | null>(null);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,8 +156,28 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
     }
   };
 
-  const handleMessageUser = () => {
-    router.push(`/messages?userId=${user.id}`);
+  const handleMessageUser = async () => {
+    const isFirstDegree = connectionStatus === 'ACCEPTED' || user.connectionStatus === 'ACCEPTED';
+    if (!isFirstDegree) {
+      toast('Direct messaging is available for 1st-degree connections. Send a connection request first!', {
+        icon: '🔒',
+      });
+      return;
+    }
+
+    try {
+      setIsStartingChat(true);
+      const conv = await messagingService.getOrCreateDirectConversation(user.id);
+      if (conv?.id) {
+        setChatConversationId(conv.id);
+        setIsChatModalOpen(true);
+      }
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || 'Failed to start messaging thread';
+      toast.error(errorMsg);
+    } finally {
+      setIsStartingChat(false);
+    }
   };
 
   const handleBlockToggle = async () => {
@@ -288,10 +313,20 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
                     <Button
                       size="sm"
                       variant="outline"
+                      disabled={isStartingChat}
                       onClick={handleMessageUser}
-                      className="text-xs gap-1.5 font-medium text-foreground hover:bg-secondary/50"
+                      className={`text-xs gap-1.5 font-medium hover:bg-secondary/50 ${
+                        connectionStatus === 'ACCEPTED'
+                          ? 'text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 font-semibold'
+                          : 'text-foreground'
+                      }`}
                     >
-                      <MessageSquare className="h-3.5 w-3.5 text-primary" /> Message
+                      {isStartingChat ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                      ) : (
+                        <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                      )}
+                      Message
                     </Button>
                   )}
 
@@ -430,6 +465,16 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
             }
             onProfileUpdated?.(updated);
           }}
+        />
+      )}
+
+      {/* Quick Direct Chat Modal */}
+      {chatConversationId && (
+        <ChatModal
+          isOpen={isChatModalOpen}
+          onClose={() => setIsChatModalOpen(false)}
+          recipient={user}
+          conversationId={chatConversationId}
         />
       )}
     </>

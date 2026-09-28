@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConversationType, MessageStatus, MessageType } from '@prisma/client';
 
@@ -32,6 +32,10 @@ export class MessagingService {
             },
           },
         },
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
@@ -64,7 +68,7 @@ export class MessagingService {
 
     // Include an automated welcome/helper bot message for the new chat
     try {
-      await this.prisma.message.create({
+      const welcomeMsg = await this.prisma.message.create({
         data: {
           conversationId: newConv.id,
           senderId: userA,
@@ -72,11 +76,16 @@ export class MessagingService {
           content: '👋 Connected on SVKM ConnectSphere! Say hello or share your portfolio and projects to break the ice.',
         },
       });
+      return {
+        ...newConv,
+        messages: [welcomeMsg],
+      };
     } catch {
-      // Ignore if message insert fails
+      return {
+        ...newConv,
+        messages: [],
+      };
     }
-
-    return newConv;
   }
 
   async getMyConversations(userId: string) {
@@ -115,6 +124,10 @@ export class MessagingService {
     });
 
     if (!isMember) {
+      const conv = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+      if (!conv) {
+        throw new NotFoundException('Conversation not found');
+      }
       throw new ForbiddenException('You are not a participant in this conversation');
     }
 
@@ -133,16 +146,20 @@ export class MessagingService {
             firstName: true,
             lastName: true,
             username: true,
-            profile: { select: { profilePictureUrl: true } },
+            profile: { select: { profilePictureUrl: true, headline: true } },
           },
         },
       },
       orderBy: { createdAt: 'asc' },
-      take: 50,
+      take: 100,
     });
   }
 
   async sendMessage(conversationId: string, senderId: string, content: string, type: MessageType = MessageType.TEXT) {
+    if (!content || !content.trim()) {
+      throw new BadRequestException('Message content cannot be empty');
+    }
+
     const isMember = await this.prisma.conversationMember.findUnique({
       where: {
         conversationId_userId: { conversationId, userId: senderId },
@@ -157,7 +174,7 @@ export class MessagingService {
       data: {
         conversationId,
         senderId,
-        content,
+        content: content.trim(),
         type,
         status: MessageStatus.SENT,
       },
@@ -168,7 +185,7 @@ export class MessagingService {
             firstName: true,
             lastName: true,
             username: true,
-            profile: { select: { profilePictureUrl: true } },
+            profile: { select: { profilePictureUrl: true, headline: true } },
           },
         },
       },
@@ -181,5 +198,38 @@ export class MessagingService {
     });
 
     return message;
+  }
+
+  async markRead(conversationId: string, userId: string) {
+    try {
+      await this.prisma.conversationMember.update({
+        where: { conversationId_userId: { conversationId, userId } },
+        data: { lastReadAt: new Date() },
+      });
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
+  }
+
+  async getUnreadCount(userId: string) {
+    const memberships = await this.prisma.conversationMember.findMany({
+      where: { userId },
+      select: { conversationId: true, lastReadAt: true },
+    });
+
+    let unreadCount = 0;
+    for (const m of memberships) {
+      const count = await this.prisma.message.count({
+        where: {
+          conversationId: m.conversationId,
+          senderId: { not: userId },
+          createdAt: { gt: m.lastReadAt },
+        },
+      });
+      if (count > 0) unreadCount++;
+    }
+
+    return { count: unreadCount };
   }
 }

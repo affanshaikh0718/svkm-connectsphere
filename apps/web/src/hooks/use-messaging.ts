@@ -21,10 +21,9 @@ export function useMessaging(conversationId?: string) {
     }
     messagingService
       .getMessages(conversationId)
-      .then((res) => {
-        if (res?.data) {
-          setMessages(res.data);
-        }
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : (res?.data?.data || []));
+        setMessages(list);
       })
       .catch(() => {});
   }, [conversationId]);
@@ -34,10 +33,14 @@ export function useMessaging(conversationId?: string) {
 
     // Join conversation room
     socket.emit('join_conversation', { conversationId });
+    socket.emit('join:conversation', { conversationId });
 
     // Listen for new messages
     const handleNewMessage = (message: Message) => {
-      setMessages((prev) => [message, ...prev.filter((m) => m.id !== message.id)]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
 
       queryClient.setQueryData(
         ['messages', conversationId],
@@ -46,7 +49,7 @@ export function useMessaging(conversationId?: string) {
           return {
             ...old,
             pages: old.pages.map((page, index) =>
-              index === 0 ? { ...page, data: [message, ...page.data] } : page
+              index === 0 ? { ...page, data: [...page.data, message] } : page
             ),
           };
         }
@@ -57,12 +60,18 @@ export function useMessaging(conversationId?: string) {
     };
 
     // Listen for typing indicators
-    const handleTypingStart = ({ userId }: { userId: string }) => {
-      setTypingUsers((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+    const handleTypingStart = (data: { userId: string }) => {
+      const userId = data?.userId;
+      if (userId) {
+        setTypingUsers((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+      }
     };
 
-    const handleTypingStop = ({ userId }: { userId: string }) => {
-      setTypingUsers((prev) => prev.filter((id) => id !== userId));
+    const handleTypingStop = (data: { userId: string }) => {
+      const userId = data?.userId;
+      if (userId) {
+        setTypingUsers((prev) => prev.filter((id) => id !== userId));
+      }
     };
 
     // Listen for message read status
@@ -74,35 +83,25 @@ export function useMessaging(conversationId?: string) {
             : msg
         )
       );
-
-      queryClient.setQueryData(
-        ['messages', conversationId],
-        (old: { pages: Array<{ data: Message[] }> } | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              data: page.data.map((msg) =>
-                msg.id === messageId
-                  ? { ...msg, readBy: [...msg.readBy, userId], isRead: true }
-                  : msg
-              ),
-            })),
-          };
-        }
-      );
     };
 
     socket.on('new_message', handleNewMessage);
+    socket.on('message:received', handleNewMessage);
     socket.on('typing_start', handleTypingStart);
+    socket.on('typing:indicator', (data) => {
+      if (data?.isTyping) handleTypingStart(data);
+      else handleTypingStop(data);
+    });
     socket.on('typing_stop', handleTypingStop);
     socket.on('message_read', handleMessageRead);
 
     return () => {
       socket.emit('leave_conversation', { conversationId });
+      socket.emit('leave:conversation', { conversationId });
       socket.off('new_message', handleNewMessage);
+      socket.off('message:received', handleNewMessage);
       socket.off('typing_start', handleTypingStart);
+      socket.off('typing:indicator');
       socket.off('typing_stop', handleTypingStop);
       socket.off('message_read', handleMessageRead);
     };
@@ -128,7 +127,10 @@ export function useMessaging(conversationId?: string) {
       if (!conversationId || !content.trim()) return;
       const sent = await messagingService.sendMessage(conversationId, content);
       if (sent) {
-        setMessages((prev) => [sent, ...prev.filter((m) => m.id !== sent.id)]);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === sent.id)) return prev;
+          return [...prev, sent];
+        });
       }
       return sent;
     },

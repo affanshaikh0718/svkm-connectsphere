@@ -58,48 +58,66 @@ function SearchResultsContent() {
       ) : results ? (
         <div className="space-y-6">
           {/* People Section */}
-          {results.users?.length > 0 && (
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  People ({results.users.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="divide-y divide-border/40">
-                {results.users.map((u: any) => (
-                  <div key={u.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        {u.profile?.profilePictureUrl && (
-                          <AvatarImage src={u.profile.profilePictureUrl} alt={u.firstName} />
-                        )}
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                          {getInitials(u.firstName, u.lastName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <Link
-                          href={`/in/${u.username}`}
-                          className="font-semibold text-sm hover:underline text-foreground"
-                        >
-                          {u.firstName} {u.lastName}
-                        </Link>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {u.profile?.headline || 'SVKM Ecosystem Member'}
-                        </p>
+          {(() => {
+            const people = results.users || results.people || [];
+            if (people.length === 0) return null;
+            return (
+              <Card className="border-border/60 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    People & Alumni ({people.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="divide-y divide-border/40">
+                  {people.map((u: any) => (
+                    <div key={u.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          {u.profile?.profilePictureUrl && (
+                            <AvatarImage src={u.profile.profilePictureUrl} alt={u.firstName} />
+                          )}
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                            {getInitials(u.firstName, u.lastName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <Link
+                            href={`/in/${u.username}`}
+                            className="font-semibold text-sm hover:underline text-foreground truncate block"
+                          >
+                            {u.firstName} {u.lastName}
+                          </Link>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {u.profile?.headline || 'SVKM Ecosystem Member'}
+                          </p>
+                          {/* Tags / Skills Chips */}
+                          {u.profile?.skills && u.profile.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {u.profile.skills.map((sk: any, i: number) => (
+                                <Badge
+                                  key={i}
+                                  variant="secondary"
+                                  className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary font-normal"
+                                >
+                                  {sk.skill?.name || sk.customName}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      <Link href={`/in/${u.username}`}>
+                        <Button size="sm" variant="outline" className="text-xs shrink-0">
+                          View Profile
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href={`/in/${u.username}`}>
-                      <Button size="sm" variant="outline" className="text-xs">
-                        View Profile
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Jobs Section */}
           {results.jobs?.length > 0 && (
@@ -134,14 +152,40 @@ function SearchResultsContent() {
             </Card>
           )}
 
+          {/* Companies Section */}
+          {results.companies?.length > 0 && (
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-blue-500" />
+                  Companies & Organizations ({results.companies.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border/40">
+                {results.companies.map((c: any) => (
+                  <div key={c.id} className="py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-semibold text-sm text-foreground">{c.name}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {c.industry || 'Tech'} • {c.location || 'Mumbai, India'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Empty state */}
           {(!results.users || results.users.length === 0) &&
-            (!results.jobs || results.jobs.length === 0) && (
+            (!results.people || results.people.length === 0) &&
+            (!results.jobs || results.jobs.length === 0) &&
+            (!results.companies || results.companies.length === 0) && (
               <div className="text-center py-16 bg-card border border-border/60 rounded-xl p-6">
                 <Search className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
                 <h3 className="font-bold text-base">No exact results found for &ldquo;{query}&rdquo;</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Try searching for MPSTME, DJSCE, Rohan, or engineering keywords.
+                  Try searching for MPSTME, DJSCE, Rohan, or engineering keywords like React, Python, or NestJS.
                 </p>
                 <Link href="/network" className="mt-4 inline-block">
                   <Button size="sm" variant="outline" className="text-xs">

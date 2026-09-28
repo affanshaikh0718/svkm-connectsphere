@@ -124,11 +124,15 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const { firstName, lastName, name, ...profileFields } = dto;
+    const { firstName, lastName, name, ...rawFields } = dto;
 
     const userUpdate: { firstName?: string; lastName?: string } = {};
-    if (firstName !== undefined) userUpdate.firstName = firstName;
-    if (lastName !== undefined) userUpdate.lastName = lastName;
+    if (firstName !== undefined && firstName.trim() !== '') {
+      userUpdate.firstName = firstName.trim();
+    }
+    if (lastName !== undefined && lastName.trim() !== '') {
+      userUpdate.lastName = lastName.trim();
+    }
     if (name && firstName === undefined) {
       const parts = name.trim().split(' ');
       userUpdate.firstName = parts[0];
@@ -142,22 +146,78 @@ export class UsersService {
       });
     }
 
+    // Safely extract and constrain only known Profile model columns
+    const profileData: Record<string, any> = {};
+
+    if (rawFields.headline !== undefined) {
+      profileData.headline = rawFields.headline ? rawFields.headline.slice(0, 220) : null;
+    }
+    if (rawFields.bio !== undefined) {
+      profileData.bio = rawFields.bio ? rawFields.bio : null;
+    }
+    if (rawFields.location !== undefined) {
+      profileData.location = rawFields.location ? rawFields.location.slice(0, 100) : null;
+    }
+    if (rawFields.website !== undefined) {
+      profileData.website = rawFields.website ? rawFields.website.slice(0, 500) : null;
+    }
+    if (rawFields.phoneNumber !== undefined) {
+      profileData.phoneNumber = rawFields.phoneNumber ? rawFields.phoneNumber.slice(0, 20) : null;
+    }
+    if (rawFields.githubUrl !== undefined) {
+      profileData.githubUrl = rawFields.githubUrl ? rawFields.githubUrl.slice(0, 500) : null;
+    }
+    if (rawFields.twitterUrl !== undefined) {
+      profileData.twitterUrl = rawFields.twitterUrl ? rawFields.twitterUrl.slice(0, 500) : null;
+    }
+    if (rawFields.linkedinUrl !== undefined) {
+      profileData.linkedinUrl = rawFields.linkedinUrl ? rawFields.linkedinUrl.slice(0, 500) : null;
+    }
+    if (rawFields.profilePictureUrl !== undefined) {
+      profileData.profilePictureUrl = rawFields.profilePictureUrl ? rawFields.profilePictureUrl.slice(0, 1000) : null;
+    }
+    if (rawFields.profilePictureKey !== undefined) {
+      profileData.profilePictureKey = rawFields.profilePictureKey ? rawFields.profilePictureKey.slice(0, 500) : null;
+    }
+    if (rawFields.coverImageUrl !== undefined) {
+      profileData.coverImageUrl = rawFields.coverImageUrl ? rawFields.coverImageUrl.slice(0, 1000) : null;
+    }
+    if (rawFields.coverImageKey !== undefined) {
+      profileData.coverImageKey = rawFields.coverImageKey ? rawFields.coverImageKey.slice(0, 500) : null;
+    }
+    if (rawFields.isOpenToWork !== undefined) {
+      profileData.isOpenToWork = Boolean(rawFields.isOpenToWork);
+    }
+    if (rawFields.openToWorkTypes !== undefined) {
+      profileData.openToWorkTypes = Array.isArray(rawFields.openToWorkTypes) ? rawFields.openToWorkTypes : [];
+    }
+
     const updatedProfile = await this.prisma.profile.upsert({
       where: { userId },
-      update: profileFields,
+      update: profileData,
       create: {
         userId,
-        ...profileFields,
+        ...profileData,
+      },
+      include: {
+        experiences: { orderBy: { startDate: 'desc' } },
+        educations: { orderBy: { startYear: 'desc' } },
+        skills: { include: { skill: true } },
+        certifications: true,
+        projects: true,
       },
     });
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { firstName: true, lastName: true },
+      select: { id: true, username: true, email: true, firstName: true, lastName: true },
     });
 
     return {
       ...updatedProfile,
+      id: user?.id,
+      username: user?.username,
+      email: user?.email,
       firstName: user?.firstName,
       lastName: user?.lastName,
     };

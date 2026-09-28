@@ -73,32 +73,35 @@ export default function SettingsPage() {
     try {
       setIsSavingProfile(true);
       const updated = await usersService.updateProfile({
-        firstName,
-        lastName,
-        headline,
-        bio,
-        location,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        headline: headline.trim(),
+        bio: bio.trim(),
+        location: location.trim(),
       });
 
       // Synchronize state in Zustand store
       updateUser({
-        firstName,
-        lastName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         ...(user?.profile
           ? {
               profile: {
                 ...user.profile,
                 ...updated,
-                headline,
-                bio,
-                location,
+                headline: headline.trim(),
+                bio: bio.trim(),
+                location: location.trim(),
               },
             }
           : {}),
       });
       toast.success('Profile details saved successfully!');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to update profile');
+      const errorMsg = Array.isArray(err?.response?.data?.message)
+        ? err.response.data.message.join('. ')
+        : (err?.response?.data?.message || err?.message || 'Failed to update profile');
+      toast.error(errorMsg);
     } finally {
       setIsSavingProfile(false);
     }

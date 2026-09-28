@@ -55,24 +55,33 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('join:conversation')
+  @SubscribeMessage('join_conversation')
   handleJoinConversation(
     @ConnectedSocket() client: Socket,
-    @MessageBody('conversationId') conversationId: string,
+    @MessageBody() body: any,
   ) {
-    client.join(`conversation:${conversationId}`);
+    const conversationId = typeof body === 'string' ? body : body?.conversationId;
+    if (conversationId) {
+      client.join(`conversation:${conversationId}`);
+    }
     return { status: 'joined', conversationId };
   }
 
   @SubscribeMessage('leave:conversation')
+  @SubscribeMessage('leave_conversation')
   handleLeaveConversation(
     @ConnectedSocket() client: Socket,
-    @MessageBody('conversationId') conversationId: string,
+    @MessageBody() body: any,
   ) {
-    client.leave(`conversation:${conversationId}`);
+    const conversationId = typeof body === 'string' ? body : body?.conversationId;
+    if (conversationId) {
+      client.leave(`conversation:${conversationId}`);
+    }
     return { status: 'left', conversationId };
   }
 
   @SubscribeMessage('message:send')
+  @SubscribeMessage('send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string; content: string },
@@ -87,33 +96,56 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     );
 
     // Broadcast to everyone in the conversation room
-    this.server.to(`conversation:${data.conversationId}`).emit('message:received', message);
+    this.broadcastNewMessage(data.conversationId, message);
     return message;
   }
 
   @SubscribeMessage('typing:start')
+  @SubscribeMessage('typing_start')
   handleTypingStart(
     @ConnectedSocket() client: Socket,
-    @MessageBody('conversationId') conversationId: string,
+    @MessageBody() body: any,
   ) {
+    const conversationId = typeof body === 'string' ? body : body?.conversationId;
     const userId = client.data.userId;
-    client.to(`conversation:${conversationId}`).emit('typing:indicator', {
-      conversationId,
-      userId,
-      isTyping: true,
-    });
+    if (conversationId && userId) {
+      client.to(`conversation:${conversationId}`).emit('typing:indicator', {
+        conversationId,
+        userId,
+        isTyping: true,
+      });
+      client.to(`conversation:${conversationId}`).emit('typing_start', {
+        conversationId,
+        userId,
+      });
+    }
   }
 
   @SubscribeMessage('typing:stop')
+  @SubscribeMessage('typing_stop')
   handleTypingStop(
     @ConnectedSocket() client: Socket,
-    @MessageBody('conversationId') conversationId: string,
+    @MessageBody() body: any,
   ) {
+    const conversationId = typeof body === 'string' ? body : body?.conversationId;
     const userId = client.data.userId;
-    client.to(`conversation:${conversationId}`).emit('typing:indicator', {
-      conversationId,
-      userId,
-      isTyping: false,
-    });
+    if (conversationId && userId) {
+      client.to(`conversation:${conversationId}`).emit('typing:indicator', {
+        conversationId,
+        userId,
+        isTyping: false,
+      });
+      client.to(`conversation:${conversationId}`).emit('typing_stop', {
+        conversationId,
+        userId,
+      });
+    }
+  }
+
+  broadcastNewMessage(conversationId: string, message: any) {
+    if (this.server) {
+      this.server.to(`conversation:${conversationId}`).emit('message:received', message);
+      this.server.to(`conversation:${conversationId}`).emit('new_message', message);
+    }
   }
 }

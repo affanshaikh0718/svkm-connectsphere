@@ -25,23 +25,53 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   location?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   website?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20)
+  phoneNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
   githubUrl?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   twitterUrl?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   linkedinUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  profilePictureUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  profilePictureKey?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  coverImageUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  coverImageKey?: string;
 
   @IsBoolean()
   @IsOptional()

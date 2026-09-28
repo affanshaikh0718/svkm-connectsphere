@@ -22,17 +22,23 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor — attach access token
+// Request interceptor — attach access token and user ID
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('auth-storage');
         if (stored) {
-          const parsed = JSON.parse(stored) as { state?: { accessToken?: string } };
+          const parsed = JSON.parse(stored) as {
+            state?: { accessToken?: string; user?: { id?: string } };
+          };
           const token = parsed?.state?.accessToken;
           if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
+          }
+          const userId = parsed?.state?.user?.id;
+          if (userId && config.headers) {
+            config.headers['x-user-id'] = userId;
           }
         }
       } catch {

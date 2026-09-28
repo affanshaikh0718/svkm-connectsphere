@@ -3,8 +3,9 @@ import type { ApiResponse, CursorPaginatedResponse, Conversation, Message } from
 
 export const messagingService = {
   async getConversations(): Promise<Conversation[]> {
-    const response = await apiClient.get<ApiResponse<Conversation[]>>('/messages/conversations');
-    return response.data.data;
+    const response = await apiClient.get<any>('/messages/conversations');
+    const raw = response.data;
+    return Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
   },
 
   async getMyConversations(): Promise<{ data: Conversation[] }> {
@@ -13,8 +14,9 @@ export const messagingService = {
   },
 
   async getOrCreateConversation(userId: string): Promise<Conversation> {
-    const response = await apiClient.post<ApiResponse<Conversation>>('/messages/conversations', { userId });
-    return response.data.data;
+    const response = await apiClient.post<any>('/messages/conversations', { userId });
+    const raw = response.data;
+    return raw?.data || raw;
   },
 
   async getOrCreateDirectConversation(userId: string): Promise<Conversation> {
@@ -23,10 +25,17 @@ export const messagingService = {
 
   async getMessages(conversationId: string, cursor?: string): Promise<CursorPaginatedResponse<Message>> {
     const params = cursor ? `?cursor=${cursor}` : '';
-    const response = await apiClient.get<CursorPaginatedResponse<Message>>(
+    const response = await apiClient.get<any>(
       `/messages/conversations/${conversationId}/messages${params}`
     );
-    return response.data;
+    const raw = response.data;
+    const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : (raw?.data?.data || []));
+    return {
+      success: true,
+      data: list,
+      nextCursor: undefined,
+      hasMore: false,
+    };
   },
 
   async sendMessage(conversationId: string, content: string, mediaFile?: File): Promise<Message> {
@@ -34,22 +43,28 @@ export const messagingService = {
       const formData = new FormData();
       formData.append('content', content);
       formData.append('media', mediaFile);
-      const response = await apiClient.post<ApiResponse<Message>>(
+      const response = await apiClient.post<any>(
         `/messages/conversations/${conversationId}/messages`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
-      return response.data.data;
+      const raw = response.data;
+      return raw?.data || raw;
     }
-    const response = await apiClient.post<ApiResponse<Message>>(
+    const response = await apiClient.post<any>(
       `/messages/conversations/${conversationId}/messages`,
       { content }
     );
-    return response.data.data;
+    const raw = response.data;
+    return raw?.data || raw;
   },
 
   async markConversationRead(conversationId: string): Promise<void> {
-    await apiClient.post(`/messages/conversations/${conversationId}/read`);
+    try {
+      await apiClient.post(`/messages/conversations/${conversationId}/read`);
+    } catch {
+      // Ignore
+    }
   },
 
   async deleteMessage(conversationId: string, messageId: string): Promise<void> {
@@ -57,7 +72,12 @@ export const messagingService = {
   },
 
   async getTotalUnreadCount(): Promise<number> {
-    const response = await apiClient.get<ApiResponse<{ count: number }>>('/messages/unread-count');
-    return response.data.data.count;
+    try {
+      const response = await apiClient.get<any>('/messages/unread-count');
+      const raw = response.data;
+      return raw?.data?.count ?? raw?.count ?? 0;
+    } catch {
+      return 0;
+    }
   },
 };

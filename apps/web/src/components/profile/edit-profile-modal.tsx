@@ -141,16 +141,29 @@ export function EditProfileModal({
     e.preventDefault();
     try {
       setIsSaving(true);
-      const updated = await usersService.updateProfile({
-        firstName,
-        lastName,
-        headline,
-        bio,
-        location,
-        website,
-        phoneNumber,
-        coverImageUrl,
-      });
+      const payload: Record<string, any> = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      };
+
+      if (headline.trim()) payload.headline = headline.trim();
+      else payload.headline = '';
+
+      if (bio.trim()) payload.bio = bio.trim();
+      else payload.bio = '';
+
+      if (location.trim()) payload.location = location.trim();
+      else payload.location = '';
+
+      if (website.trim()) payload.website = website.trim();
+      else payload.website = '';
+
+      if (phoneNumber.trim()) payload.phoneNumber = phoneNumber.trim();
+      else payload.phoneNumber = '';
+
+      if (coverImageUrl) payload.coverImageUrl = coverImageUrl;
+
+      const updated = await usersService.updateProfile(payload);
 
       // Update skills that are newly added
       for (const skillName of skills) {
@@ -163,42 +176,38 @@ export function EditProfileModal({
         }
       }
 
+      const mergedProfile = {
+        ...(user?.profile || {}),
+        ...updated,
+        headline: headline.trim(),
+        bio: bio.trim(),
+        location: location.trim(),
+        website: website.trim(),
+        phoneNumber: phoneNumber.trim(),
+        coverImageUrl,
+        skills: skills.map((name, i) => ({ id: `skill-${i}`, skill: { name } })),
+      };
+
       // Update user in auth store
       updateUser({
-        firstName,
-        lastName,
-        profile: {
-          ...(user?.profile || {}),
-          ...updated,
-          headline,
-          bio,
-          location,
-          website,
-          phoneNumber,
-          coverImageUrl,
-        },
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        profile: mergedProfile,
       });
 
       toast.success('Profile updated successfully!');
       onProfileUpdated?.({
         ...user,
-        firstName,
-        lastName,
-        profile: {
-          ...(user?.profile || {}),
-          ...updated,
-          headline,
-          bio,
-          location,
-          website,
-          phoneNumber,
-          coverImageUrl,
-          skills: skills.map((name, i) => ({ id: `temp-${i}`, skill: { name } })),
-        },
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        profile: mergedProfile,
       });
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to update profile');
+      const errorMsg = Array.isArray(err?.response?.data?.message)
+        ? err.response.data.message.join('. ')
+        : (err?.response?.data?.message || err?.message || 'Failed to update profile');
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
