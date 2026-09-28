@@ -422,3 +422,73 @@ export interface ProfileSummary {
   savedCount: number;
 }
 
+// ─── Recommendations ─────────────────────────────────────────────────────────
+
+export type RecommendationStatus =
+  | 'REQUESTED'
+  | 'PENDING_APPROVAL'
+  | 'ACCEPTED'
+  | 'DISMISSED'
+  | 'REVISION_REQUESTED';
+
+export interface RecommendationUserSummary {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  profile?: {
+    headline?: string;
+    profilePictureUrl?: string;
+  };
+}
+
+export interface Recommendation {
+  id: string;
+  requesterId?: string | null;
+  senderId: string;
+  recipientId: string;
+  positionTitle: string;
+  positionId?: string | null;
+  relationship: string;
+  content?: string | null;
+  requestMessage?: string | null;
+  revisionNote?: string | null;
+  status: RecommendationStatus;
+  isHidden: boolean;
+  createdAt: string;
+  updatedAt: string;
+  sender?: RecommendationUserSummary;
+  recipient?: RecommendationUserSummary;
+  requester?: RecommendationUserSummary;
+}
+
+export interface UserRecommendationsResponse {
+  received: Recommendation[];
+  given: Recommendation[];
+  pendingApprovals: Recommendation[];
+  pendingRequests: Recommendation[];
+  isOwner: boolean;
+  isConnected: boolean;
+  targetPositions: Array<{
+    id: string;
+    position: string;
+    companyName: string;
+    isCurrent: boolean;
+  }>;
+  viewerPositions: Array<{
+    id: string;
+    position: string;
+    companyName: string;
+    isCurrent: boolean;
+  }>;
+  existingBetweenViewerAndTarget?: Recommendation[];
+}
+
+export interface RecommendationsInboxResponse {
+  incomingRequests: Recommendation[];
+  pendingApprovals: Recommendation[];
+  revisionsRequested: Recommendation[];
+  sentRequests: Recommendation[];
+  totalActionable: number;
+}
+

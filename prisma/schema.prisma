@@ -95,6 +95,10 @@ enum NotificationType {
   NEW_MESSAGE
   JOB_APPLICATION_UPDATE
   JOB_RECOMMENDATION
+  RECOMMENDATION_REQUESTED
+  RECOMMENDATION_RECEIVED
+  RECOMMENDATION_ACCEPTED
+  RECOMMENDATION_REVISION
   COMPANY_POST
   MENTION
   SYSTEM
@@ -108,6 +112,15 @@ enum EntityType {
   JOB
   COMPANY
   MESSAGE
+  RECOMMENDATION
+}
+
+enum RecommendationStatus {
+  REQUESTED
+  PENDING_APPROVAL
+  ACCEPTED
+  DISMISSED
+  REVISION_REQUESTED
 }
 
 enum CompanySize {
@@ -245,6 +258,10 @@ model User {
   reports              Report[]             @relation("ReportSubmitter")
   auditLogs            AuditLog[]           @relation("AuditActor")
   privacySettings      PrivacySettings?
+
+  sentRecommendations      Recommendation[]     @relation("RecommendationSender")
+  receivedRecommendations  Recommendation[]     @relation("RecommendationRecipient")
+  requestedRecommendations Recommendation[]     @relation("RecommendationRequester")
 
   @@index([email])
   @@index([username])
@@ -926,4 +943,35 @@ model AuditLog {
   @@index([actorId])
   @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────
+// RECOMMENDATIONS
+// ─────────────────────────────────────────
+
+model Recommendation {
+  id              String               @id @default(uuid())
+  requesterId     String?
+  senderId        String
+  recipientId     String
+  positionTitle   String               @db.VarChar(150)
+  positionId      String?
+  relationship    String               @db.VarChar(150)
+  content         String?              @db.Text
+  requestMessage  String?              @db.Text
+  revisionNote    String?              @db.Text
+  status          RecommendationStatus @default(PENDING_APPROVAL)
+  isHidden        Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  requester       User?                @relation("RecommendationRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  sender          User                 @relation("RecommendationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient       User                 @relation("RecommendationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, recipientId, positionTitle])
+  @@index([recipientId, status, isHidden])
+  @@index([senderId])
+  @@index([requesterId])
+  @@map("recommendations")
 }

@@ -8,6 +8,7 @@ import { postsService } from '@/services/posts.service';
 import { notificationsService } from '@/services/notifications.service';
 import { ProfileHeader } from '@/components/profile/profile-header';
 import { ExperienceCard } from '@/components/profile/experience-card';
+import { RecommendationsSection } from '@/components/recommendations/recommendations-section';
 import { CreatePost } from '@/components/feed/create-post';
 import { PostCard } from '@/components/feed/post-card';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -269,6 +270,9 @@ export default function UserProfilePage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Recommendations Section (Prompt 6: Recommendations block with Received and Given tabs) */}
+          <RecommendationsSection user={user} currentUser={currentUser} />
         </TabsContent>
 
         {/* Tab 2: Activity & Posts */}

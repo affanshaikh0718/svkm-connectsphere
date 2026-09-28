@@ -18,6 +18,7 @@ import { SearchModule } from './search/search.module';
 import { ReportsModule } from './reports/reports.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthModule } from './health/health.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -44,6 +45,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     ReportsModule,
     AdminModule,
     HealthModule,
+    RecommendationsModule,
   ],
   providers: [
     {

@@ -17,6 +17,8 @@ import {
   Mail,
   MapPin,
   MessageSquare,
+  Send,
+  Award,
   Sparkles,
   UserCheck,
   UserPlus,
@@ -28,6 +30,8 @@ import { ContactInfoModal } from './contact-info-modal';
 import { EditProfileModal } from './edit-profile-modal';
 import { ChatModal } from './chat-modal';
 import { messagingService } from '@/services/messaging.service';
+import { RequestRecommendationModal } from '@/components/recommendations/request-recommendation-modal';
+import { WriteRecommendationModal } from '@/components/recommendations/write-recommendation-modal';
 
 interface ProfileHeaderProps {
   user: {
@@ -77,6 +81,8 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [chatConversationId, setChatConversationId] = useState<string | null>(null);
   const [isStartingChat, setIsStartingChat] = useState(false);
+  const [isRequestRecModalOpen, setIsRequestRecModalOpen] = useState(false);
+  const [isWriteRecModalOpen, setIsWriteRecModalOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -341,14 +347,31 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
                       <ShieldAlert className="h-3.5 w-3.5" /> Blocked
                     </Button>
                   ) : connectionStatus === 'ACCEPTED' ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled
-                      className="text-xs gap-1.5 text-emerald-600 border-emerald-500/30 bg-emerald-500/5 cursor-default font-semibold"
-                    >
-                      <UserCheck className="h-4 w-4" /> Connected
-                    </Button>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled
+                        className="text-xs gap-1.5 text-emerald-600 border-emerald-500/30 bg-emerald-500/5 cursor-default font-semibold"
+                      >
+                        <UserCheck className="h-4 w-4" /> Connected
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsRequestRecModalOpen(true)}
+                        className="text-xs gap-1.5 font-medium hover:bg-secondary/60"
+                      >
+                        <Send className="h-3.5 w-3.5 text-primary" /> Request a recommendation
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsWriteRecModalOpen(true)}
+                        className="text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-xs"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> Recommend {user.firstName}
+                      </Button>
+                    </div>
                   ) : connectionStatus === 'PENDING' ? (
                     <Button
                       size="sm"
@@ -475,6 +498,24 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
           onClose={() => setIsChatModalOpen(false)}
           recipient={user}
           conversationId={chatConversationId}
+        />
+      )}
+
+      {/* Request Recommendation Modal */}
+      {isRequestRecModalOpen && (
+        <RequestRecommendationModal
+          isOpen={isRequestRecModalOpen}
+          onClose={() => setIsRequestRecModalOpen(false)}
+          targetUser={user}
+        />
+      )}
+
+      {/* Write Recommendation Modal */}
+      {isWriteRecModalOpen && (
+        <WriteRecommendationModal
+          isOpen={isWriteRecModalOpen}
+          onClose={() => setIsWriteRecModalOpen(false)}
+          recipient={user}
         />
       )}
     </>
