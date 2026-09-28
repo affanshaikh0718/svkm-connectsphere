@@ -55,6 +55,7 @@ export class FeedService {
         ],
       },
       include: {
+        media: true,
         author: {
           select: {
             id: true,

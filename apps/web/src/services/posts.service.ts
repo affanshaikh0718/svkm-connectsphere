@@ -19,15 +19,24 @@ export const postsService = {
     return response.data.data;
   },
 
-  async createPost(data: { content: string; visibility: string; mediaFiles?: File[] }): Promise<Post> {
-    const formData = new FormData();
-    formData.append('content', data.content);
-    formData.append('visibility', data.visibility);
-    if (data.mediaFiles) {
+  async createPost(data: { content: string; visibility?: string; mediaUrls?: string[]; type?: string; mediaFiles?: File[] }): Promise<Post> {
+    if (data.mediaFiles && data.mediaFiles.length > 0) {
+      const formData = new FormData();
+      formData.append('content', data.content);
+      formData.append('visibility', data.visibility || 'PUBLIC');
+      if (data.type) formData.append('type', data.type);
       data.mediaFiles.forEach((file) => formData.append('media', file));
+      const response = await apiClient.post<ApiResponse<Post>>('/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data.data;
     }
-    const response = await apiClient.post<ApiResponse<Post>>('/posts', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+
+    const response = await apiClient.post<ApiResponse<Post>>('/posts', {
+      content: data.content,
+      visibility: data.visibility || 'PUBLIC',
+      mediaUrls: data.mediaUrls,
+      type: data.type,
     });
     return response.data.data;
   },
@@ -64,9 +73,9 @@ export const postsService = {
     return response.data.data;
   },
 
-  async getComments(postId: string, cursor?: string): Promise<CursorPaginatedResponse<Comment>> {
+  async getComments(postId: string, cursor?: string): Promise<any> {
     const params = cursor ? `?cursor=${cursor}` : '';
-    const response = await apiClient.get<CursorPaginatedResponse<Comment>>(`/posts/${postId}/comments${params}`);
+    const response = await apiClient.get<any>(`/posts/${postId}/comments${params}`);
     return response.data;
   },
 
@@ -96,5 +105,21 @@ export const postsService = {
 
   async reportPost(id: string, reason: string): Promise<void> {
     await apiClient.post(`/posts/${id}/report`, { reason });
+  },
+
+  async uploadMedia(file: File): Promise<{ url: string; filename: string; mimetype: string; isVideo: boolean }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<ApiResponse<{ url: string; filename: string; mimetype: string; isVideo: boolean }>>(
+      '/posts/media',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data.data;
+  },
+
+  async getUserPosts(userId: string, limit = 20): Promise<Post[]> {
+    const response = await apiClient.get<ApiResponse<Post[]>>(`/posts/user/${userId}?limit=${limit}`);
+    return response.data.data || [];
   },
 };

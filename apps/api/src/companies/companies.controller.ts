@@ -42,12 +42,28 @@ export class CompaniesController {
     return this.companiesService.updateCompany(id, userId, dto);
   }
 
+  @Post(':id/request')
+  async requestMembership(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.companiesService.requestMembership(id, userId);
+  }
+
+  @Post(':id/join')
+  async joinCompany(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.companiesService.requestMembership(id, userId);
+  }
+
   @Post(':id/members')
   async addMember(
     @Param('id') id: string,
     @CurrentUser('id') adminUserId: string,
-    @Body('userId') targetUserId: string,
-    @Body('role') role: CompanyMemberRole,
+    @Body('userId') targetUserId?: string,
+    @Body('role') role?: CompanyMemberRole,
   ) {
     return this.companiesService.addMember(id, adminUserId, targetUserId, role);
   }

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
-import { CompanyMemberRole } from '@prisma/client';
+import { CompanyMemberRole, EntityType, NotificationType } from '@prisma/client';
 
 @Injectable()
 export class CompaniesService {
@@ -115,23 +115,90 @@ export class CompaniesService {
     });
   }
 
-  async addMember(companyId: string, adminUserId: string, targetUserId: string, role: CompanyMemberRole) {
-    const admin = await this.prisma.companyMember.findUnique({
-      where: { companyId_userId: { companyId, userId: adminUserId } },
+  async requestMembership(companyIdOrSlug: string, userId: string) {
+    const company = await this.prisma.company.findFirst({
+      where: {
+        OR: [{ id: companyIdOrSlug }, { slug: companyIdOrSlug }],
+      },
     });
 
-    if (!admin || admin.role !== 'ADMIN') {
-      throw new ForbiddenException('Only company administrators can add members');
+    if (!company) {
+      throw new NotFoundException('Institute / Organization not found');
+    }
+
+    const membership = await this.prisma.companyMember.upsert({
+      where: { companyId_userId: { companyId: company.id, userId } },
+      update: {},
+      create: {
+        companyId: company.id,
+        userId,
+        role: CompanyMemberRole.MEMBER,
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoUrl: true,
+          },
+        },
+      },
+    });
+
+    if (company.createdById && company.createdById !== userId) {
+      const requester = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { firstName: true, lastName: true },
+      });
+
+      await this.prisma.notification.create({
+        data: {
+          recipientId: company.createdById,
+          actorId: userId,
+          type: NotificationType.SYSTEM,
+          entityType: EntityType.COMPANY,
+          entityId: company.id,
+          message: `${requester?.firstName || 'A user'} ${requester?.lastName || ''} requested / joined ${company.name}`,
+        },
+      });
+    }
+
+    return membership;
+  }
+
+  async addMember(companyIdOrSlug: string, adminUserId: string, targetUserId?: string, role?: CompanyMemberRole) {
+    const company = await this.prisma.company.findFirst({
+      where: {
+        OR: [{ id: companyIdOrSlug }, { slug: companyIdOrSlug }],
+      },
+    });
+
+    if (!company) {
+      throw new NotFoundException('Institute / Organization not found');
+    }
+
+    const target = targetUserId || adminUserId;
+    const isSelf = target === adminUserId;
+
+    if (!isSelf) {
+      const admin = await this.prisma.companyMember.findUnique({
+        where: { companyId_userId: { companyId: company.id, userId: adminUserId } },
+      });
+
+      if (!admin || admin.role !== 'ADMIN') {
+        throw new ForbiddenException('Only company administrators can add members');
+      }
     }
 
     return this.prisma.companyMember.upsert({
-      where: { companyId_userId: { companyId, userId: targetUserId } },
-      update: { role },
+      where: { companyId_userId: { companyId: company.id, userId: target } },
+      update: { role: role || CompanyMemberRole.MEMBER },
       create: {
-        companyId,
-        userId: targetUserId,
-        role,
-        invitedById: adminUserId,
+        companyId: company.id,
+        userId: target,
+        role: role || CompanyMemberRole.MEMBER,
+        invitedById: isSelf ? undefined : adminUserId,
       },
     });
   }

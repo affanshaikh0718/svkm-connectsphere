@@ -17,6 +17,10 @@ export const messagingService = {
     return response.data.data;
   },
 
+  async getOrCreateDirectConversation(userId: string): Promise<Conversation> {
+    return this.getOrCreateConversation(userId);
+  },
+
   async getMessages(conversationId: string, cursor?: string): Promise<CursorPaginatedResponse<Message>> {
     const params = cursor ? `?cursor=${cursor}` : '';
     const response = await apiClient.get<CursorPaginatedResponse<Message>>(

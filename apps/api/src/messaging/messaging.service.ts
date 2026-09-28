@@ -38,7 +38,7 @@ export class MessagingService {
     if (existing) return existing;
 
     // Create new direct conversation
-    return this.prisma.conversation.create({
+    const newConv = await this.prisma.conversation.create({
       data: {
         type: ConversationType.DIRECT,
         members: {
@@ -61,6 +61,22 @@ export class MessagingService {
         },
       },
     });
+
+    // Include an automated welcome/helper bot message for the new chat
+    try {
+      await this.prisma.message.create({
+        data: {
+          conversationId: newConv.id,
+          senderId: userA,
+          type: MessageType.SYSTEM,
+          content: '👋 Connected on SVKM ConnectSphere! Say hello or share your portfolio and projects to break the ice.',
+        },
+      });
+    } catch {
+      // Ignore if message insert fails
+    }
+
+    return newConv;
   }
 
   async getMyConversations(userId: string) {

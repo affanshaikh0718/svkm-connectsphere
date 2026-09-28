@@ -20,6 +20,7 @@ interface PostCardProps {
     commentCount: number;
     isLiked?: boolean;
     isSaved?: boolean;
+    media?: { id?: string; url: string; mimeType?: string }[];
     author: {
       id: string;
       firstName: string;
@@ -101,6 +102,44 @@ export function PostCard({ post }: PostCardProps) {
         <div className="text-sm whitespace-pre-line text-foreground/90 leading-relaxed mb-4">
           {post.content}
         </div>
+
+        {/* Attached Media (Photos / Videos) */}
+        {post.media && post.media.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {post.media.map((item, idx) => {
+              const isVideo =
+                item.mimeType?.startsWith('video/') ||
+                /\.(mp4|webm|mov|mkv)$/i.test(item.url);
+              if (isVideo) {
+                return (
+                  <div
+                    key={item.id || idx}
+                    className="rounded-xl overflow-hidden border border-border/60 bg-black/5"
+                  >
+                    <video
+                      src={item.url}
+                      controls
+                      className="w-full max-h-[420px] rounded-xl object-contain bg-black"
+                    />
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={item.id || idx}
+                  className="rounded-xl overflow-hidden border border-border/60 bg-secondary/10"
+                >
+                  <img
+                    src={item.url}
+                    alt="Post media attachment"
+                    className="w-full max-h-[460px] object-cover rounded-xl"
+                    loading="lazy"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Engagement Stats */}
         <div className="flex items-center justify-between text-xs text-muted-foreground py-2 border-y border-border/40">

@@ -50,14 +50,27 @@ export class ConnectionsService {
       }
     }
 
-    const connection = await this.prisma.connection.create({
-      data: {
-        requesterId,
-        addresseeId,
-        status: ConnectionStatus.PENDING,
-        message,
-      },
-    });
+    let connection;
+    if (existing) {
+      connection = await this.prisma.connection.update({
+        where: { id: existing.id },
+        data: {
+          requesterId,
+          addresseeId,
+          status: ConnectionStatus.PENDING,
+          message,
+        },
+      });
+    } else {
+      connection = await this.prisma.connection.create({
+        data: {
+          requesterId,
+          addresseeId,
+          status: ConnectionStatus.PENDING,
+          message,
+        },
+      });
+    }
 
     // Notify addressee
     const requester = await this.prisma.user.findUnique({
@@ -291,5 +304,58 @@ export class ConnectionsService {
       },
     });
     return { message: 'Unfollowed successfully' };
+  }
+
+  async blockUser(blockerId: string, blockedId: string) {
+    if (blockerId === blockedId) {
+      throw new BadRequestException('Cannot block yourself');
+    }
+
+    // Upsert block record
+    const block = await this.prisma.block.upsert({
+      where: {
+        blockerId_blockedId: { blockerId, blockedId },
+      },
+      create: { blockerId, blockedId },
+      update: {},
+    });
+
+    // Remove any existing connection or pending request
+    await this.prisma.connection.deleteMany({
+      where: {
+        OR: [
+          { requesterId: blockerId, addresseeId: blockedId },
+          { requesterId: blockedId, addresseeId: blockerId },
+        ],
+      },
+    });
+
+    // Remove any follow relationships
+    await this.prisma.follow.deleteMany({
+      where: {
+        OR: [
+          { followerId: blockerId, followingId: blockedId },
+          { followerId: blockedId, followingId: blockerId },
+        ],
+      },
+    });
+
+    return { success: true, message: 'User blocked successfully', block };
+  }
+
+  async unblockUser(blockerId: string, blockedId: string) {
+    await this.prisma.block.deleteMany({
+      where: { blockerId, blockedId },
+    });
+    return { success: true, message: 'User unblocked successfully' };
+  }
+
+  async getBlockStatus(userId: string, targetUserId: string) {
+    const isBlockedByMe = await this.prisma.block.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId: userId, blockedId: targetUserId },
+      },
+    });
+    return { isBlocked: !!isBlockedByMe };
   }
 }

@@ -29,6 +29,15 @@ export class ConnectionsController {
     return this.connectionsService.getSuggestions(userId);
   }
 
+  @Post('request')
+  async sendRequestWithBody(
+    @CurrentUser('id') requesterId: string,
+    @Body('userId') addresseeId: string,
+    @Body('message') message?: string,
+  ) {
+    return this.connectionsService.sendRequest(requesterId, addresseeId, message);
+  }
+
   @Post('request/:userId')
   async sendRequest(
     @CurrentUser('id') requesterId: string,
@@ -76,5 +85,29 @@ export class ConnectionsController {
     @Param('userId') followingId: string,
   ) {
     return this.connectionsService.unfollowUser(followerId, followingId);
+  }
+
+  @Post('block/:userId')
+  async blockUser(
+    @CurrentUser('id') blockerId: string,
+    @Param('userId') blockedId: string,
+  ) {
+    return this.connectionsService.blockUser(blockerId, blockedId);
+  }
+
+  @Delete('block/:userId')
+  async unblockUser(
+    @CurrentUser('id') blockerId: string,
+    @Param('userId') blockedId: string,
+  ) {
+    return this.connectionsService.unblockUser(blockerId, blockedId);
+  }
+
+  @Get('block/:userId')
+  async getBlockStatus(
+    @CurrentUser('id') userId: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.connectionsService.getBlockStatus(userId, targetUserId);
   }
 }

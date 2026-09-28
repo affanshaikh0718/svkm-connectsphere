@@ -29,4 +29,8 @@ export class CreateCommentDto {
   @IsString()
   @IsOptional()
   parentId?: string;
+
+  @IsString()
+  @IsOptional()
+  parentCommentId?: string;
 }

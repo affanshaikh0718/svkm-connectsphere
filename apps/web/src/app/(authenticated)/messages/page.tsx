@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { messagingService } from '@/services/messaging.service';
 import { useMessaging } from '@/hooks/use-messaging';
@@ -9,10 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { formatTimeAgo } from '@/lib/utils';
-import { MessageSquare, Send } from 'lucide-react';
+import { Bot, MessageSquare, Send, Sparkles } from 'lucide-react';
 
-export default function MessagesPage() {
+function MessagesPageContent() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
+  const queryUserId = searchParams.get('userId');
+  const queryConversationId = searchParams.get('conversationId');
+
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConversation, setActiveConversation] = useState<any>(null);
   const [inputMessage, setInputMessage] = useState('');
@@ -23,19 +28,38 @@ export default function MessagesPage() {
     const fetchConversations = async () => {
       try {
         const res = await messagingService.getMyConversations();
-        if (res.data) {
-          setConversations(res.data);
-          if (res.data.length > 0) {
-            setActiveConversation(res.data[0]);
+        let list = res.data || [];
+
+        // If target userId specified in query, ensure direct conversation is created/selected
+        if (queryUserId && user?.id && queryUserId !== user.id) {
+          try {
+            const targetConv = await messagingService.getOrCreateDirectConversation(queryUserId);
+            if (targetConv) {
+              const existingIdx = list.findIndex((c: any) => c.id === targetConv.id);
+              if (existingIdx === -1) {
+                list = [targetConv, ...list];
+              }
+              setActiveConversation(targetConv);
+            }
+          } catch {
+            // fallback
           }
+        } else if (queryConversationId) {
+          const match = list.find((c: any) => c.id === queryConversationId);
+          if (match) setActiveConversation(match);
+          else if (list.length > 0) setActiveConversation(list[0]);
+        } else if (list.length > 0 && !activeConversation) {
+          setActiveConversation(list[0]);
         }
+
+        setConversations(list);
       } catch {
         // error
       }
     };
 
     fetchConversations();
-  }, []);
+  }, [queryUserId, queryConversationId, user?.id]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,6 +157,22 @@ export default function MessagesPage() {
               {/* Messages Stream */}
               <div className="flex-1 p-4 overflow-y-auto space-y-3">
                 {messages.map((msg: any) => {
+                  if (msg.type === 'SYSTEM') {
+                    return (
+                      <div key={msg.id} className="flex justify-center my-3">
+                        <div className="max-w-[85%] rounded-xl px-4 py-2.5 bg-primary/10 border border-primary/20 text-xs text-foreground flex items-start gap-2.5 shadow-sm">
+                          <Bot className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <div className="space-y-0.5">
+                            <span className="font-semibold text-primary block text-[11px]">
+                              ConnectSphere Assistant
+                            </span>
+                            <p className="leading-relaxed text-muted-foreground">{msg.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const isMine = msg.senderId === user?.id;
                   return (
                     <div
@@ -177,5 +217,21 @@ export default function MessagesPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-5xl mx-auto py-6 px-4">
+          <Card className="h-[680px] flex items-center justify-center text-xs text-muted-foreground">
+            Loading conversations...
+          </Card>
+        </div>
+      }
+    >
+      <MessagesPageContent />
+    </Suspense>
   );
 }

@@ -23,6 +23,10 @@ export interface Profile {
   bio?: string;
   location?: string;
   website?: string;
+  phoneNumber?: string;
+  githubUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
   institution?: string;
   college?: string;
   department?: string;
@@ -385,3 +389,36 @@ export interface ProfileCompletion {
   percentage: number;
   missingFields: string[];
 }
+
+export interface ProfileAnalytics {
+  profileViewers: number;
+  postImpressions: number;
+  searchAppearances: number;
+  viewerGrowthPercentage?: number;
+  connectionCount: number;
+}
+
+export interface ProfileSummary {
+  user: {
+    id: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  profile: {
+    headline: string;
+    location: string;
+    institution: string;
+    profilePictureUrl?: string;
+    coverImageUrl?: string;
+    connectionCount?: number;
+  };
+  analytics: {
+    profileViewers: number;
+    postImpressions: number;
+    connectionCount: number;
+  };
+  savedCount: number;
+}
+

@@ -13,6 +13,7 @@ export default function NetworkPage() {
   const [connections, setConnections] = useState<any[]>([]);
   const [pendingReceived, setPendingReceived] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [sentRequestIds, setSentRequestIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
@@ -26,6 +27,10 @@ export default function NetworkPage() {
 
       if (connRes.data) setConnections(connRes.data);
       if (pendingRes.data?.received) setPendingReceived(pendingRes.data.received);
+      if (pendingRes.data?.sent) {
+        const sentIds = pendingRes.data.sent.map((item: any) => item.addresseeId || item.addressee?.id).filter(Boolean);
+        setSentRequestIds(sentIds);
+      }
       if (suggRes.data) setSuggestions(suggRes.data);
     } catch {
       // error
@@ -61,10 +66,25 @@ export default function NetworkPage() {
   const handleConnect = async (userId: string) => {
     try {
       await connectionsService.sendConnectionRequest(userId);
+      setSentRequestIds((prev) => [...prev, userId]);
       toast.success('Connection request sent');
       loadData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Failed to send request');
+      const errorMsg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        '';
+      if (
+        errorMsg.toLowerCase().includes('already connected') ||
+        errorMsg.toLowerCase().includes('already pending') ||
+        err?.response?.status === 409
+      ) {
+        setSentRequestIds((prev) => [...prev, userId]);
+        toast(errorMsg || 'Connection status updated', { icon: '🤝' });
+        loadData();
+      } else {
+        toast.error(errorMsg || 'Failed to send request');
+      }
     }
   };
 
@@ -144,14 +164,25 @@ export default function NetworkPage() {
                     </p>
                   </Link>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleConnect(person.id)}
-                    className="w-full mt-4 text-xs font-semibold gap-1.5"
-                  >
-                    <UserPlus className="h-3.5 w-3.5" /> Connect
-                  </Button>
+                  {sentRequestIds.includes(person.id) ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled
+                      className="w-full mt-4 text-xs font-semibold gap-1.5"
+                    >
+                      <Check className="h-3.5 w-3.5 text-primary" /> Request Sent
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleConnect(person.id)}
+                      className="w-full mt-4 text-xs font-semibold gap-1.5"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Connect
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>

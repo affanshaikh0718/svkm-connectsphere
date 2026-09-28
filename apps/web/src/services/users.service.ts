@@ -12,6 +12,8 @@ import type {
   Certification,
   Post,
   ProfileCompletion,
+  ProfileSummary,
+  ProfileAnalytics,
 } from '@/types';
 
 export const usersService = {
@@ -20,8 +22,13 @@ export const usersService = {
     return response.data.data;
   },
 
-  async updateProfile(data: Partial<Profile>): Promise<Profile> {
-    const response = await apiClient.patch<ApiResponse<Profile>>('/users/me/profile', data);
+  async updateProfile(
+    data: Partial<Profile> & { firstName?: string; lastName?: string }
+  ): Promise<Profile & { firstName?: string; lastName?: string }> {
+    const response = await apiClient.patch<ApiResponse<Profile & { firstName?: string; lastName?: string }>>(
+      '/users/me/profile',
+      data
+    );
     return response.data.data;
   },
 
@@ -139,4 +146,15 @@ export const usersService = {
     const response = await apiClient.get<ApiResponse<User[]>>(`/users/suggested${params}`);
     return response.data.data;
   },
+
+  async getProfileSummary(): Promise<ProfileSummary> {
+    const response = await apiClient.get<ApiResponse<ProfileSummary>>('/users/me/profile-summary');
+    return response.data.data;
+  },
+
+  async getAnalytics(): Promise<ProfileAnalytics> {
+    const response = await apiClient.get<ApiResponse<ProfileAnalytics>>('/users/me/analytics');
+    return response.data.data;
+  },
 };
+

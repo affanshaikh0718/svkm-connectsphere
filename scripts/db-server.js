@@ -23,8 +23,16 @@ async function startDb() {
     onError: (err) => console.error('PostgreSQL error:', err),
   });
 
-  console.log('Initializing embedded PostgreSQL with UTF-8...');
-  await pg.initialise();
+  const isInit = fs.existsSync(path.join(dataDir, 'PG_VERSION'));
+  if (!isInit) {
+    console.log('Initializing embedded PostgreSQL with UTF-8...');
+    await pg.initialise();
+  } else {
+    const pidFile = path.join(dataDir, 'postmaster.pid');
+    if (fs.existsSync(pidFile)) {
+      try { fs.unlinkSync(pidFile); } catch (e) {}
+    }
+  }
   console.log('Starting PostgreSQL server...');
   await pg.start();
 

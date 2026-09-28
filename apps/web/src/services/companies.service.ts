@@ -26,4 +26,14 @@ export const companiesService = {
     const response = await apiClient.get<ApiResponse<Company[]>>(`/companies/suggested?limit=${limit}`);
     return response.data.data;
   },
+
+  async requestMembership(companyIdOrSlug: string): Promise<any> {
+    const response = await apiClient.post<ApiResponse<any>>(`/companies/${companyIdOrSlug}/request`);
+    return response.data.data;
+  },
+
+  async joinCompany(companyIdOrSlug: string): Promise<any> {
+    const response = await apiClient.post<ApiResponse<any>>(`/companies/${companyIdOrSlug}/join`);
+    return response.data.data;
+  },
 };

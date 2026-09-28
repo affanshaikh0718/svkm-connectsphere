@@ -4,6 +4,18 @@ import { EmploymentType, LocationType } from '@prisma/client';
 export class UpdateProfileDto {
   @IsString()
   @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(220)
   headline?: string;
 

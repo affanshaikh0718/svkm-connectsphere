@@ -19,8 +19,9 @@ export function middleware(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(p)
   );
 
-  // Redirect authenticated users away from login/register
-  if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
+  // Redirect authenticated users away from login/register only if not redirected from auth failure
+  const isFromProtected = request.nextUrl.searchParams.has('from');
+  if (isAuthenticated && !isFromProtected && (pathname === '/login' || pathname === '/register')) {
     return NextResponse.redirect(new URL('/home', request.url));
   }
 

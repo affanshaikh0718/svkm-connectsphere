@@ -50,7 +50,13 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const url = originalRequest?.url || '';
+    const isAuthEndpoint =
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -101,10 +107,14 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         isRefreshing = false;
         refreshSubscribers = [];
-        // Force logout
+        // Force logout and avoid reload loop
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth-storage');
-          window.location.href = '/login';
+          document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          const pathname = window.location.pathname;
+          if (!pathname.startsWith('/login') && !pathname.startsWith('/register')) {
+            window.location.href = `/login?from=${encodeURIComponent(pathname)}`;
+          }
         }
         return Promise.reject(refreshError);
       }

@@ -12,12 +12,27 @@ export class PostsService {
   constructor(private prisma: PrismaService) {}
 
   async createPost(userId: string, dto: CreatePostDto) {
+    const mediaCreate = dto.mediaUrls && dto.mediaUrls.length > 0
+      ? {
+          create: dto.mediaUrls.map((url, idx) => ({
+            url,
+            s3Key: `media-${Date.now()}-${idx}`,
+            mimeType: url.endsWith('.mp4') || url.endsWith('.webm') ? 'video/mp4' : 'image/jpeg',
+            size: 1024,
+            order: idx,
+          })),
+        }
+      : undefined;
+
+    const postType = dto.type || (dto.mediaUrls && dto.mediaUrls.length > 0 ? 'IMAGE' : 'TEXT');
+
     const post = await this.prisma.post.create({
       data: {
         authorId: userId,
         content: dto.content,
-        type: dto.type || 'TEXT',
+        type: postType,
         visibility: dto.visibility || PostVisibility.PUBLIC,
+        media: mediaCreate,
       },
       include: {
         author: {
@@ -29,6 +44,7 @@ export class PostsService {
             profile: { select: { headline: true, profilePictureUrl: true } },
           },
         },
+        media: true,
       },
     });
 
@@ -39,6 +55,7 @@ export class PostsService {
     const post = await this.prisma.post.findFirst({
       where: { id: postId, isDeleted: false },
       include: {
+        media: true,
         author: {
           select: {
             id: true,
@@ -169,16 +186,46 @@ export class PostsService {
     return { isLiked: true };
   }
 
+  async getComments(postId: string, cursor?: string, limit = 50) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.isDeleted) throw new NotFoundException('Post not found');
+
+    return this.prisma.comment.findMany({
+      where: {
+        postId,
+        isDeleted: false,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            profile: {
+              select: {
+                headline: true,
+                profilePictureUrl: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Number(limit) || 50,
+    });
+  }
+
   async addComment(userId: string, postId: string, dto: CreateCommentDto) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post || post.isDeleted) throw new NotFoundException();
+    if (!post || post.isDeleted) throw new NotFoundException('Post not found');
 
     const comment = await this.prisma.comment.create({
       data: {
         postId,
         authorId: userId,
         content: dto.content,
-        parentId: dto.parentId || null,
+        parentId: dto.parentId || dto.parentCommentId || null,
       },
       include: {
         author: {
@@ -258,5 +305,25 @@ export class PostsService {
     });
 
     return items.map((i) => i.post);
+  }
+
+  async getUserPosts(authorId: string, limit = 20) {
+    return this.prisma.post.findMany({
+      where: { authorId, isDeleted: false },
+      include: {
+        media: true,
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            profile: { select: { headline: true, profilePictureUrl: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
   }
 }
