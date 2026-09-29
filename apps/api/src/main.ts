@@ -24,10 +24,26 @@ async function bootstrap() {
   }
   app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
 
-  // CORS configuration
+  // CORS configuration — dynamically allow localhost, vercel.app domains, and configured origins
   const allowedOrigins = configService.get<string[]>('allowedOrigins') || ['http://localhost:3000'];
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('vercel.app') ||
+        allowedOrigins.some((o) => o && (o === '*' || origin === o.trim()));
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        logger.warn(`Blocked by CORS: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-user-id', 'X-User-Id'],

@@ -58,14 +58,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.['refreshToken'] || req.body?.refreshToken;
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', this.getCookieOptions());
     return this.authService.logout(refreshToken);
   }
 
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
   async logoutAll(@CurrentUser('id') userId: string, @Res({ passthrough: true }) res: Response) {
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', this.getCookieOptions());
     return this.authService.logoutAll(userId);
   }
 
@@ -89,17 +89,24 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', this.getCookieOptions());
     return this.authService.changePassword(userId, dto);
+  }
+
+  private getCookieOptions() {
+    const isProd = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+      path: '/',
+    };
   }
 
   private setRefreshTokenCookie(res: Response, token: string) {
     res.cookie('refreshToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      ...this.getCookieOptions(),
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
     });
   }
 }

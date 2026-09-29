@@ -73,7 +73,19 @@ export default function LoginPage() {
         router.push('/home');
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Invalid credentials. Please try again.');
+      console.error('[ConnectSphere Auth Error] Login failed:', {
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        errorData: err?.response?.data,
+        message: err?.message,
+      });
+      const errorMsg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        (err?.message === 'Network Error'
+          ? 'Network Error: Backend API server unreachable. Check NEXT_PUBLIC_API_URL or CORS.'
+          : 'Invalid credentials. Please try again.');
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

@@ -110,7 +110,19 @@ function RegisterForm() {
         router.push('/home');
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Registration failed. Please check inputs.');
+      console.error('[ConnectSphere Auth Error] Registration failed:', {
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        errorData: err?.response?.data,
+        message: err?.message,
+      });
+      const errorMsg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        (err?.message === 'Network Error'
+          ? 'Network Error: Backend API unreachable. Check NEXT_PUBLIC_API_URL or CORS.'
+          : 'Registration failed. Please check inputs.');
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
