@@ -8,9 +8,11 @@ import {
   Patch,
   Post,
   Put,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -19,6 +21,15 @@ import { UsersService } from './users.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { EducationDto, ExperienceDto, UpdateProfileDto } from './dto/profile.dto';
+
+function getBaseUrl(req: Request): string {
+  if (process.env.APP_URL) {
+    return process.env.APP_URL.replace(/\/+$/, '');
+  }
+  const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+  const host = req.get('host') || 'localhost:4000';
+  return `${proto}://${host}`;
+}
 
 @Controller('users')
 export class UsersController {
@@ -107,11 +118,13 @@ export class UsersController {
   async uploadProfilePicture(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: any,
+    @Req() req: Request,
   ) {
     if (!file) {
       throw new BadRequestException('No image file provided');
     }
-    const profilePictureUrl = `http://localhost:4000/uploads/avatars/${file.filename}`;
+    const baseUrl = getBaseUrl(req);
+    const profilePictureUrl = `${baseUrl}/uploads/avatars/${file.filename}`;
     return this.usersService.updateAvatar(userId, profilePictureUrl);
   }
 
@@ -138,11 +151,13 @@ export class UsersController {
   async uploadCoverImage(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: any,
+    @Req() req: Request,
   ) {
     if (!file) {
       throw new BadRequestException('No image file provided');
     }
-    const coverImageUrl = `http://localhost:4000/uploads/covers/${file.filename}`;
+    const baseUrl = getBaseUrl(req);
+    const coverImageUrl = `${baseUrl}/uploads/covers/${file.filename}`;
     return this.usersService.updateCoverImage(userId, coverImageUrl);
   }
 

@@ -80,7 +80,15 @@ export default function HomePage() {
               </p>
             </div>
           ) : (
-            posts.map((post) => <PostCard key={post.id} post={post} />)
+            posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onPostDeleted={(deletedId) =>
+                  setPosts((prev) => prev.filter((p) => p.id !== deletedId))
+                }
+              />
+            ))
           )}
         </div>
 

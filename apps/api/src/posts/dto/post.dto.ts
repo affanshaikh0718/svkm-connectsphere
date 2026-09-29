@@ -34,3 +34,21 @@ export class CreateCommentDto {
   @IsOptional()
   parentCommentId?: string;
 }
+
+export class UpdatePostDto {
+  @IsString()
+  @IsOptional()
+  @MaxLength(3000, { message: 'Post content must be under 3000 characters' })
+  content?: string;
+
+  @IsEnum(PostVisibility)
+  @IsOptional()
+  visibility?: PostVisibility;
+}
+
+export class ReportPostDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Report reason is required' })
+  reason: string;
+}
+

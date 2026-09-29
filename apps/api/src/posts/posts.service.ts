@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCommentDto, CreatePostDto } from './dto/post.dto';
-import { EntityType, NotificationType, PostVisibility } from '@prisma/client';
+import { CreateCommentDto, CreatePostDto, ReportPostDto, UpdatePostDto } from './dto/post.dto';
+import { EntityType, NotificationType, PostVisibility, ReportCategory } from '@prisma/client';
 
 @Injectable()
 export class PostsService {
@@ -135,6 +135,63 @@ export class PostsService {
     });
 
     return { message: 'Post deleted successfully' };
+  }
+
+  async updatePost(postId: string, userId: string, dto: UpdatePostDto) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.isDeleted) throw new NotFoundException('Post not found');
+
+    if (post.authorId !== userId) {
+      throw new ForbiddenException('You can only edit your own posts');
+    }
+
+    const updated = await this.prisma.post.update({
+      where: { id: postId },
+      data: {
+        ...(dto.content !== undefined ? { content: dto.content } : {}),
+        ...(dto.visibility !== undefined ? { visibility: dto.visibility } : {}),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            profile: { select: { headline: true, profilePictureUrl: true } },
+          },
+        },
+        media: true,
+      },
+    });
+
+    return updated;
+  }
+
+  async reportPost(userId: string, postId: string, dto: ReportPostDto) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.isDeleted) throw new NotFoundException('Post not found');
+
+    let category: ReportCategory = ReportCategory.OTHER;
+    const reasonUpper = (dto.reason || '').toUpperCase();
+    if (reasonUpper.includes('SPAM')) category = ReportCategory.SPAM;
+    else if (reasonUpper.includes('HARASS')) category = ReportCategory.HARASSMENT;
+    else if (reasonUpper.includes('FAKE')) category = ReportCategory.FAKE_ACCOUNT;
+    else if (reasonUpper.includes('COPYRIGHT')) category = ReportCategory.COPYRIGHT;
+    else if (reasonUpper.includes('INAPPROPRIATE')) category = ReportCategory.INAPPROPRIATE;
+    else if (reasonUpper.includes('SCAM')) category = ReportCategory.SCAM;
+
+    await this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        targetType: EntityType.POST,
+        targetId: postId,
+        category,
+        description: dto.reason,
+      },
+    });
+
+    return { message: 'Report submitted successfully' };
   }
 
   async likePost(userId: string, postId: string) {

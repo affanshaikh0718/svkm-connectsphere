@@ -7,11 +7,16 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import cookieParser = require('cookie-parser');
 import helmet from 'helmet';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
+
+  // Increase payload size limits for image and video uploads
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
 
   // Security middlewares
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

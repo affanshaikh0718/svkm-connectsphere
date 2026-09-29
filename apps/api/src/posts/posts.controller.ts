@@ -5,11 +5,15 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
+  Put,
   Query,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -17,7 +21,16 @@ import { existsSync, mkdirSync } from 'fs';
 import { PostsService } from './posts.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { CreateCommentDto, CreatePostDto } from './dto/post.dto';
+import { CreateCommentDto, CreatePostDto, ReportPostDto, UpdatePostDto } from './dto/post.dto';
+
+function getBaseUrl(req: Request): string {
+  if (process.env.APP_URL) {
+    return process.env.APP_URL.replace(/\/+$/, '');
+  }
+  const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+  const host = req.get('host') || 'localhost:4000';
+  return `${proto}://${host}`;
+}
 
 @Controller('posts')
 export class PostsController {
@@ -46,11 +59,13 @@ export class PostsController {
   async uploadMedia(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: any,
+    @Req() req: Request,
   ) {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
-    const mediaUrl = `http://localhost:4000/uploads/posts/${file.filename}`;
+    const baseUrl = getBaseUrl(req);
+    const mediaUrl = `${baseUrl}/uploads/posts/${file.filename}`;
     const isVideo = file.mimetype?.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(file.filename);
     return {
       url: mediaUrl,
@@ -78,12 +93,39 @@ export class PostsController {
     return this.postsService.getPostById(id, viewerId);
   }
 
+  @Patch(':id')
+  async updatePost(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdatePostDto,
+  ) {
+    return this.postsService.updatePost(id, userId, dto);
+  }
+
+  @Put(':id')
+  async updatePostPut(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdatePostDto,
+  ) {
+    return this.postsService.updatePost(id, userId, dto);
+  }
+
   @Delete(':id')
   async deletePost(
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
   ) {
     return this.postsService.deletePost(id, userId);
+  }
+
+  @Post(':id/report')
+  async reportPost(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: ReportPostDto,
+  ) {
+    return this.postsService.reportPost(userId, id, dto);
   }
 
   @Post(':id/like')
