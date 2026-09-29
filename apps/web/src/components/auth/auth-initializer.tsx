@@ -18,8 +18,14 @@ export function AuthInitializer() {
       try {
         const user = await authService.getMe();
         setUser(user);
-      } catch {
-        logout();
+        document.cookie = 'cs_auth=true; path=/; max-age=604800; SameSite=Lax';
+      } catch (err: any) {
+        // Only log out if the backend explicitly reports unauthorized 401
+        if (err?.response?.status === 401) {
+          logout();
+          document.cookie = 'cs_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        }
       }
     };
 

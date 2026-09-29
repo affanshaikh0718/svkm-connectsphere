@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
@@ -60,6 +60,17 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const hasAuthCookie = typeof document !== 'undefined' && document.cookie.includes('cs_auth=true');
+    const isAuthed = useAuthStore.getState().isAuthenticated;
+    if (isAuthed || hasAuthCookie) {
+      const fromParam = new URLSearchParams(window.location.search).get('from');
+      if (!fromParam || fromParam === '/login') {
+        router.replace('/home');
+      }
+    }
+  }, [router]);
+
   const handleLogin = async (idVal: string, passVal: string) => {
     if (!idVal || !passVal || isLoading) return;
 
@@ -69,8 +80,22 @@ export default function LoginPage() {
       if (res?.user && res?.accessToken) {
         setUser(res.user);
         setAccessToken(res.accessToken);
+
+        // Set frontend auth cookies for Next.js middleware
+        const maxAge = 7 * 24 * 60 * 60;
+        document.cookie = `cs_auth=true; path=/; max-age=${maxAge}; SameSite=Lax`;
+        document.cookie = `refreshToken=${res.refreshToken || res.accessToken || 'active'}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
         toast.success(`Welcome back, ${res.user.firstName}!`);
-        router.push('/home');
+
+        const params = new URLSearchParams(window.location.search);
+        const fromParam = params.get('from');
+        const target = fromParam && fromParam.startsWith('/') && !fromParam.startsWith('/login')
+          ? fromParam
+          : '/home';
+
+        window.location.href = target;
+        return;
       }
     } catch (err: any) {
       console.error('[ConnectSphere Auth Error] Login failed:', {

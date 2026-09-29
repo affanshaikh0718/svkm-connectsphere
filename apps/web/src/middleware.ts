@@ -32,8 +32,11 @@ export function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl;
 
-    // Read the refresh token cookie set by auth endpoints
-    const token = request.cookies.get('refreshToken')?.value;
+    // Read the auth tokens set by client and auth endpoints
+    const token =
+      request.cookies.get('refreshToken')?.value ||
+      request.cookies.get('cs_auth')?.value ||
+      request.cookies.get('accessToken')?.value;
     const isAuthenticated = Boolean(token);
 
     const isPublicPath = PUBLIC_PATHS.some(

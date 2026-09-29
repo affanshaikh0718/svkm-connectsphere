@@ -106,8 +106,14 @@ function RegisterForm() {
       if (res?.user && res?.accessToken) {
         setUser(res.user);
         setAccessToken(res.accessToken);
+
+        const maxAge = 7 * 24 * 60 * 60;
+        document.cookie = `cs_auth=true; path=/; max-age=${maxAge}; SameSite=Lax`;
+        document.cookie = `refreshToken=${res.refreshToken || res.accessToken || 'active'}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
         toast.success(`Welcome to ConnectSphere SVKM, ${res.user.firstName}!`);
-        router.push('/home');
+        window.location.href = '/home';
+        return;
       }
     } catch (err: any) {
       console.error('[ConnectSphere Auth Error] Registration failed:', {
