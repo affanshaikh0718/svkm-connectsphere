@@ -37,9 +37,20 @@ export class UsersService {
     return user;
   }
 
-  async getByUsername(username: string, viewerId?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+  async getByUsername(identifier: string, viewerId?: string) {
+    let cleanId = (identifier || '').trim();
+    if ((cleanId.toLowerCase() === 'me' || cleanId.toLowerCase() === 'self') && viewerId) {
+      cleanId = viewerId;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: cleanId, mode: 'insensitive' } },
+          { email: { equals: cleanId, mode: 'insensitive' } },
+          { id: cleanId },
+        ],
+      },
       select: {
         id: true,
         email: true,
@@ -47,6 +58,7 @@ export class UsersService {
         firstName: true,
         lastName: true,
         role: true,
+        status: true,
         profile: {
           include: {
             experiences: { orderBy: { startDate: 'desc' } },
@@ -61,7 +73,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`Profile @${username} not found`);
+      throw new NotFoundException(`Profile @${identifier} not found`);
     }
 
     // Check relationship if viewer is logged in
@@ -122,13 +134,51 @@ export class UsersService {
       }
     }
 
+    // Privacy Enforcement:
+    // Only author or 1st-degree connected users can view direct email & phone number
+    const isOwner = viewerId === user.id;
+    const isConnected = connectionStatus === 'ACCEPTED';
+    const canViewPrivateContact = isOwner || isConnected;
+
+    const sanitizedProfile = user.profile
+      ? {
+          ...user.profile,
+          phoneNumber: canViewPrivateContact ? user.profile.phoneNumber : undefined,
+        }
+      : user.profile;
+
     return {
       ...user,
+      email: canViewPrivateContact ? user.email : undefined,
+      profile: sanitizedProfile,
       connectionStatus,
       isFollowing,
       isBlocked,
       isBlockedByMe,
     };
+  }
+
+  async recordProfileView(usernameOrId: string, viewerId?: string) {
+    if (!viewerId) return { message: 'Anonymous view acknowledged' };
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: usernameOrId },
+          { id: usernameOrId },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!user || user.id === viewerId) return { message: 'Self view ignored' };
+
+    await this.prisma.profileView.create({
+      data: {
+        viewedId: user.id,
+        viewerId,
+      },
+    }).catch(() => null);
+
+    return { message: 'Profile view recorded' };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -441,7 +491,7 @@ export class UsersService {
     });
 
     // Format recent viewers with fallback data if user is newly registered
-    let recentViewers = actualViewers.map((v) => ({
+    let recentViewers = actualViewers.map((v: any) => ({
       id: v.viewer?.id || v.id,
       username: v.viewer?.username || 'member',
       name: `${v.viewer?.firstName || ''} ${v.viewer?.lastName || ''}`.trim() || 'SVKM Network Member',
@@ -456,7 +506,7 @@ export class UsersService {
     if (recentViewers.length < 4) {
       // Fallback network connections who viewed profile
       const otherUsers = await this.prisma.user.findMany({
-        where: { id: { not: userId } },
+        where: { id: { not: userId }, status: 'ACTIVE' },
         take: 5,
         select: {
           id: true,
@@ -468,21 +518,20 @@ export class UsersService {
             select: {
               headline: true,
               profilePictureUrl: true,
-              statusBadge: true,
               location: true,
             },
           },
         },
       });
 
-      const fallbackViewers = otherUsers.map((u, i) => ({
+      const fallbackViewers = otherUsers.map((u: any, i: number) => ({
         id: u.id,
         username: u.username,
         name: `${u.firstName} ${u.lastName}`,
         role: u.role,
         headline: u.profile?.headline || ((u.role as string) === 'ADMIN' ? 'SVKM Administrator' : 'Computer Engineering Student @ SVKM'),
         avatarUrl: u.profile?.profilePictureUrl,
-        statusBadge: u.profile?.statusBadge || 'Student',
+        statusBadge: 'Student',
         location: u.profile?.location || 'Mumbai, Maharashtra',
         viewedAt: new Date(Date.now() - (i + 1) * 3600000 * 4),
       }));

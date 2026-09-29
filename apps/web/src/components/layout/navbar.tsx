@@ -30,6 +30,8 @@ import { useNotificationStore } from '@/stores/notification.store';
 import { useSocket } from '@/hooks/use-socket';
 import { authService } from '@/services/auth.service';
 import { searchService } from '@/services/search.service';
+import { messagingService } from '@/services/messaging.service';
+import { notificationsService } from '@/services/notifications.service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,7 +59,7 @@ export function Navbar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
-  const { unreadCount } = useNotificationStore();
+  const { unreadCount, setUnreadCount } = useNotificationStore();
   const { socket } = useSocket();
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
@@ -145,6 +147,28 @@ export function Navbar() {
       setUnreadMsgCount(0);
     }
   }, [pathname]);
+
+  // Fetch initial unread message count and unread notification count
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadCounts = async () => {
+      try {
+        const msgUnread = await messagingService.getTotalUnreadCount();
+        setUnreadMsgCount(msgUnread || 0);
+      } catch {
+        // ignore
+      }
+      try {
+        const notifCount = await notificationsService.getUnreadCount();
+        if (typeof notifCount === 'number') {
+          setUnreadCount(notifCount);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadCounts();
+  }, [user?.id, setUnreadCount]);
 
   const handleLogout = async () => {
     try {

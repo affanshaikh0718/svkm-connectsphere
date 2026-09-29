@@ -94,7 +94,7 @@ export class SearchService {
       // Search People by Name, Title, and Tags/Skills
       this.prisma.user.findMany({
         where: {
-          status: { not: 'BANNED' },
+          status: 'ACTIVE',
           OR: userOrConditions,
         },
         select: {

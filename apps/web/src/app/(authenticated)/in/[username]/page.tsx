@@ -59,6 +59,11 @@ export default function UserProfilePage() {
           // fallback
         }
 
+        // If viewing another member's profile, record real-time profile view asynchronously
+        if (currentUser?.id && currentUser.id !== res.id) {
+          usersService.recordProfileView(username);
+        }
+
         // If viewing own profile, fetch analytics and notifications
         if (currentUser?.id === res.id) {
           try {

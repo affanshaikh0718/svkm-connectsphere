@@ -22,6 +22,14 @@ export const usersService = {
     return response.data.data;
   },
 
+  async recordProfileView(usernameOrId: string): Promise<void> {
+    try {
+      await apiClient.post(`/users/${usernameOrId}/view`);
+    } catch {
+      // Non-blocking view logging
+    }
+  },
+
   async updateProfile(
     data: Partial<Profile> & { firstName?: string; lastName?: string }
   ): Promise<Profile & { firstName?: string; lastName?: string }> {

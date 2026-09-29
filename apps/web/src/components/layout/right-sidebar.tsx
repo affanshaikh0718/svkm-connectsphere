@@ -114,16 +114,16 @@ export function RightSidebar() {
                       {company.name}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {formatNumber(company.followerCount)} followers
+                      {formatNumber(company.followerCount || 0)} followers
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-6 text-xs px-2"
-                    onClick={() => handleFollow(company.id)}
+                    onClick={() => handleFollow(company.id || '')}
                   >
-                    {followedIds.has(company.id) ? 'Following' : <><Plus className="h-3 w-3 mr-1" />Follow</>}
+                    {company.id && followedIds.has(company.id) ? 'Following' : <><Plus className="h-3 w-3 mr-1" />Follow</>}
                   </Button>
                 </li>
               ))}

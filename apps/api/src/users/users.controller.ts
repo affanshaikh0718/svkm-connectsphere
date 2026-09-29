@@ -79,6 +79,14 @@ export class UsersController {
     return this.usersService.getByUsername(username, viewerId);
   }
 
+  @Post(':username/view')
+  async recordProfileView(
+    @Param('username') username: string,
+    @CurrentUser('id') viewerId?: string,
+  ) {
+    return this.usersService.recordProfileView(username, viewerId);
+  }
+
   @Put('me/profile')
   async updateProfilePut(
     @CurrentUser('id') userId: string,

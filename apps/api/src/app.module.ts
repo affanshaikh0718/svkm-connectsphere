@@ -28,6 +28,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      envFilePath: ['.env', '../../.env', '../.env'],
     }),
     PrismaModule,
     RedisModule,
