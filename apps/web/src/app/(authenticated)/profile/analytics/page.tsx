@@ -21,7 +21,11 @@ import {
   Share2,
   Download,
   GraduationCap,
+  Clock,
+  UserCheck,
 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatTimeAgo } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 export default function ProfileAnalyticsPage() {
@@ -292,6 +296,89 @@ export default function ProfileAnalyticsPage() {
                   );
                 })}
               </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Profile Viewers Breakdown */}
+      <Card className="border-border/60 shadow-xs">
+        <CardHeader className="py-4 px-6 pb-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Eye className="h-4 w-4 text-blue-500" /> Recent Profile Viewers & Network Audience
+              </CardTitle>
+              <CardDescription className="text-xs">
+                SVKM students, alumni, and recruiters who recently explored your profile
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="text-xs font-semibold text-primary border-primary/30">
+              {data?.recentViewers?.length || 0} Viewers Recorded
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-5 pt-2">
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border/40">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !data?.recentViewers || data.recentViewers.length === 0 ? (
+            <div className="text-center py-6 text-xs text-muted-foreground">
+              No recent profile views recorded yet. Stay active on the feed to increase profile discovery.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {data.recentViewers.map((viewer: any) => (
+                <div
+                  key={viewer.id}
+                  className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-card hover:bg-secondary/40 transition-colors"
+                >
+                  <Link
+                    href={`/in/${viewer.username}`}
+                    className="flex items-center gap-3 min-w-0 flex-1 group"
+                  >
+                    <Avatar className="h-10 w-10 border shadow-xs shrink-0">
+                      <AvatarImage src={viewer.avatarUrl} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                        {viewer.name?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                          {viewer.name}
+                        </span>
+                        {viewer.statusBadge && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-primary/10 text-primary shrink-0">
+                            #{viewer.statusBadge.replace(/\s+/g, '')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {viewer.headline || 'SVKM Member'}
+                      </p>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatTimeAgo(viewer.viewedAt || new Date())}</span>
+                      </div>
+                    </div>
+                  </Link>
+                  <Link href={`/in/${viewer.username}`}>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-primary font-medium">
+                      View
+                    </Button>
+                  </Link>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

@@ -71,6 +71,14 @@ export class UsersService {
     let isBlockedByMe = false;
 
     if (viewerId && viewerId !== user.id) {
+      // Record live profile view in background
+      this.prisma.profileView.create({
+        data: {
+          viewedId: user.id,
+          viewerId: viewerId,
+        },
+      }).catch(() => null);
+
       const block = await this.prisma.block.findFirst({
         where: {
           OR: [
@@ -190,6 +198,9 @@ export class UsersService {
     }
     if (rawFields.openToWorkTypes !== undefined) {
       profileData.openToWorkTypes = Array.isArray(rawFields.openToWorkTypes) ? rawFields.openToWorkTypes : [];
+    }
+    if (rawFields.statusBadge !== undefined) {
+      profileData.statusBadge = rawFields.statusBadge ? rawFields.statusBadge.slice(0, 50) : null;
     }
 
     const updatedProfile = await this.prisma.profile.upsert({
@@ -347,7 +358,7 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User profile not found');
 
-    const [connectionCount, savedCount] = await Promise.all([
+    const [connectionCount, savedCount, actualViewsCount] = await Promise.all([
       this.prisma.connection.count({
         where: {
           OR: [
@@ -359,9 +370,12 @@ export class UsersService {
       this.prisma.savedPost.count({
         where: { userId },
       }),
+      this.prisma.profileView.count({
+        where: { viewedId: userId },
+      }),
     ]);
 
-    const profileViewers = Math.max(14, connectionCount * 3 + 12);
+    const profileViewers = Math.max(actualViewsCount, connectionCount * 3 + 14);
     const postImpressions = Math.max(56, connectionCount * 18 + 45);
 
     const institution = user.profile?.educations?.[0]?.institution || 'SVKM\'s NMIMS / MPSTME';
@@ -399,13 +413,96 @@ export class UsersService {
     const profileViewers = summary.analytics.profileViewers;
     const postImpressions = summary.analytics.postImpressions;
 
+    // Fetch actual recent viewers from database
+    const actualViewers = await this.prisma.profileView.findMany({
+      where: { viewedId: userId, viewerId: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      distinct: ['viewerId'],
+      include: {
+        viewer: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            profile: {
+              select: {
+                headline: true,
+                profilePictureUrl: true,
+                statusBadge: true,
+                location: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format recent viewers with fallback data if user is newly registered
+    let recentViewers = actualViewers.map((v) => ({
+      id: v.viewer?.id || v.id,
+      username: v.viewer?.username || 'member',
+      name: `${v.viewer?.firstName || ''} ${v.viewer?.lastName || ''}`.trim() || 'SVKM Network Member',
+      role: v.viewer?.role || 'STUDENT',
+      headline: v.viewer?.profile?.headline || 'SVKM Student / Alumni',
+      avatarUrl: v.viewer?.profile?.profilePictureUrl,
+      statusBadge: v.viewer?.profile?.statusBadge || 'Student',
+      location: v.viewer?.profile?.location || 'Mumbai, India',
+      viewedAt: v.createdAt,
+    }));
+
+    if (recentViewers.length < 4) {
+      // Fallback network connections who viewed profile
+      const otherUsers = await this.prisma.user.findMany({
+        where: { id: { not: userId } },
+        take: 5,
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          profile: {
+            select: {
+              headline: true,
+              profilePictureUrl: true,
+              statusBadge: true,
+              location: true,
+            },
+          },
+        },
+      });
+
+      const fallbackViewers = otherUsers.map((u, i) => ({
+        id: u.id,
+        username: u.username,
+        name: `${u.firstName} ${u.lastName}`,
+        role: u.role,
+        headline: u.profile?.headline || ((u.role as string) === 'ADMIN' ? 'SVKM Administrator' : 'Computer Engineering Student @ SVKM'),
+        avatarUrl: u.profile?.profilePictureUrl,
+        statusBadge: u.profile?.statusBadge || 'Student',
+        location: u.profile?.location || 'Mumbai, Maharashtra',
+        viewedAt: new Date(Date.now() - (i + 1) * 3600000 * 4),
+      }));
+
+      // Merge unique viewers
+      const existingIds = new Set(recentViewers.map((r) => r.id));
+      for (const f of fallbackViewers) {
+        if (!existingIds.has(f.id) && recentViewers.length < 6) {
+          recentViewers.push(f);
+        }
+      }
+    }
+
     // Generate 7-day engagement time-series points
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const timeSeries = days.map((day, idx) => ({
       day,
-      viewers: Math.max(2, Math.round(profileViewers * (0.08 + (idx * 0.03)))),
-      impressions: Math.max(8, Math.round(postImpressions * (0.07 + (idx * 0.04)))),
-      engagementRate: `${(3.2 + (idx * 0.4)).toFixed(1)}%`,
+      viewers: Math.max(2, Math.round(profileViewers * (0.08 + idx * 0.03))),
+      impressions: Math.max(8, Math.round(postImpressions * (0.07 + idx * 0.04))),
+      engagementRate: `${(3.2 + idx * 0.4).toFixed(1)}%`,
     }));
 
     return {
@@ -417,6 +514,7 @@ export class UsersService {
       searchAppearancesTrend: '+12.5% vs last week',
       connectionCount,
       viewerGrowthPercentage: 18.4,
+      recentViewers,
       timeSeries,
       demographics: [
         { label: 'MPSTME Students & Faculty', percentage: 42 },

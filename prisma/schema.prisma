@@ -263,6 +263,9 @@ model User {
   receivedRecommendations  Recommendation[]     @relation("RecommendationRecipient")
   requestedRecommendations Recommendation[]     @relation("RecommendationRequester")
 
+  receivedProfileViews     ProfileView[]        @relation("ProfileViewAddressee")
+  sentProfileViews         ProfileView[]        @relation("ProfileViewer")
+
   @@index([email])
   @@index([username])
   @@index([status])
@@ -286,6 +289,7 @@ model Profile {
   coverImageKey       String?   @db.VarChar(500)
   isOpenToWork        Boolean   @default(false)
   openToWorkTypes     String[]  @default([])
+  statusBadge         String?   @db.VarChar(50)
   updatedAt           DateTime  @updatedAt
 
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -974,4 +978,22 @@ model Recommendation {
   @@index([senderId])
   @@index([requesterId])
   @@map("recommendations")
+}
+
+// ─────────────────────────────────────────
+// ANALYTICS & PROFILE VIEWS
+// ─────────────────────────────────────────
+
+model ProfileView {
+  id        String   @id @default(uuid())
+  viewedId  String
+  viewerId  String?
+  createdAt DateTime @default(now())
+
+  viewed    User     @relation("ProfileViewAddressee", fields: [viewedId], references: [id], onDelete: Cascade)
+  viewer    User?    @relation("ProfileViewer", fields: [viewerId], references: [id], onDelete: SetNull)
+
+  @@index([viewedId, createdAt(sort: Desc)])
+  @@index([viewerId])
+  @@map("profile_views")
 }

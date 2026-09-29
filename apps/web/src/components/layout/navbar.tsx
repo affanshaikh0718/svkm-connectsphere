@@ -22,10 +22,12 @@ import {
   Building2,
   ArrowRight,
   BarChart3,
+  FileText,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
+import { useSocket } from '@/hooks/use-socket';
 import { authService } from '@/services/auth.service';
 import { searchService } from '@/services/search.service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -56,6 +58,8 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
+  const { socket } = useSocket();
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any>(null);
@@ -100,6 +104,47 @@ export function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Real-time message notification listener
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewMessage = (msg: any) => {
+      setUnreadMsgCount((prev) => prev + 1);
+      toast(
+        (t) => (
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => {
+              toast.dismiss(t.id);
+              router.push('/messages');
+            }}
+          >
+            <MessageSquare className="h-4 w-4 text-primary shrink-0" />
+            <div className="text-xs">
+              <p className="font-semibold text-foreground">{msg?.sender?.firstName ? `${msg.sender.firstName} ${msg.sender?.lastName || ''}` : 'New Message'}</p>
+              <p className="text-muted-foreground line-clamp-1">{msg?.content || 'Sent you a direct message'}</p>
+            </div>
+          </div>
+        ),
+        { duration: 4500 }
+      );
+    };
+
+    socket.on('message:new', handleNewMessage);
+    socket.on('message', handleNewMessage);
+
+    return () => {
+      socket.off('message:new', handleNewMessage);
+      socket.off('message', handleNewMessage);
+    };
+  }, [socket, router]);
+
+  // Clear unread message badge when navigating to /messages
+  useEffect(() => {
+    if (pathname.startsWith('/messages')) {
+      setUnreadMsgCount(0);
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -335,7 +380,7 @@ export function Navbar() {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-xs transition-colors',
+                  'relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-xs transition-colors',
                   isActive
                     ? 'text-primary border-b-2 border-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -343,6 +388,11 @@ export function Navbar() {
               >
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
+                {href === '/messages' && unreadMsgCount > 0 && (
+                  <span className="absolute top-0 right-1 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px] font-bold shadow-xs">
+                    {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -405,6 +455,12 @@ export function Navbar() {
               <Link href={`/in/${user?.username}`} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 View Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/profile/activity" className="cursor-pointer">
+                <FileText className="mr-2 h-4 w-4 text-brand-600" />
+                Posts & Activity
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

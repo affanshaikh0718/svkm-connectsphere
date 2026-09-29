@@ -80,6 +80,11 @@ export class UpdateProfileDto {
   @IsArray()
   @IsOptional()
   openToWorkTypes?: string[];
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  statusBadge?: string;
 }
 
 export class ExperienceDto {

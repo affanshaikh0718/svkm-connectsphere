@@ -237,9 +237,12 @@ export interface Notification {
 // ─── Jobs ────────────────────────────────────────────────────────────────────
 
 export interface Company {
-  id: string;
+  id?: string;
   name: string;
   slug: string;
+  location?: string;
+  growthRate?: string;
+  medianTenure?: string;
   description?: string;
   logoUrl?: string;
   coverImageUrl?: string;
@@ -248,34 +251,42 @@ export interface Company {
   companySize?: string;
   headquarters?: string;
   foundedYear?: number;
-  followerCount: number;
-  isFollowedByCurrentUser: boolean;
+  followerCount?: number;
+  isFollowedByCurrentUser?: boolean;
   employeeCount?: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Job {
   id: string;
-  companyId: string;
+  companyId?: string;
   company: Company;
   title: string;
   description: string;
-  requirements: string[];
-  responsibilities: string[];
+  requirements?: string[];
+  responsibilities?: string[];
   location?: string;
-  isRemote: boolean;
-  jobType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'FREELANCE';
-  experienceLevel: 'ENTRY' | 'MID' | 'SENIOR' | 'LEAD' | 'EXECUTIVE';
+  locationType?: string;
+  isRemote?: boolean;
+  employmentType?: string;
+  jobType?: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'FREELANCE';
+  experienceLevel?: string;
   salaryMin?: number;
   salaryMax?: number;
-  salaryCurrency: string;
-  applicationCount: number;
-  isSavedByCurrentUser: boolean;
-  status: 'ACTIVE' | 'CLOSED' | 'DRAFT';
+  salaryCurrency?: string;
+  applicationCount?: number;
+  isSavedByCurrentUser?: boolean;
+  hasApplied?: boolean;
+  isSaved?: boolean;
+  isInternship?: boolean;
+  matchScore?: number;
+  matchedSkillsCount?: number;
+  status?: 'ACTIVE' | 'CLOSED' | 'DRAFT' | string;
   expiresAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  skills?: Array<{ skill: { name: string } }>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Resume {
@@ -392,10 +403,16 @@ export interface ProfileCompletion {
 
 export interface ProfileAnalytics {
   profileViewers: number;
+  profileViewersTrend?: string;
   postImpressions: number;
+  postImpressionsTrend?: string;
   searchAppearances: number;
+  searchAppearancesTrend?: string;
   viewerGrowthPercentage?: number;
   connectionCount: number;
+  recentViewers?: any[];
+  timeSeries?: Array<{ day: string; viewers: number; impressions: number; engagementRate?: string }>;
+  demographics?: Array<{ label: string; percentage: number }>;
 }
 
 export interface ProfileSummary {

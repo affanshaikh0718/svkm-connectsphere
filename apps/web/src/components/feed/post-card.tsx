@@ -221,13 +221,38 @@ export function PostCard({ post, onPostDeleted, onPostUpdated }: PostCardProps) 
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <h4 className="font-semibold text-sm group-hover:text-primary transition-colors flex items-center gap-1.5 truncate">
+                <h4 className="font-semibold text-sm group-hover:text-primary transition-colors flex items-center gap-1.5 truncate flex-wrap">
                   <span className="truncate">
                     {post.author.firstName} {post.author.lastName}
                   </span>
                   <span className="text-xs text-muted-foreground font-normal shrink-0">
                     @{post.author.username}
                   </span>
+                  {(post.author.profile as any)?.statusBadge === 'Open to Work' && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30">
+                      #OpenToWork
+                    </span>
+                  )}
+                  {(post.author.profile as any)?.statusBadge === 'Hiring' && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-purple-500/10 text-purple-600 border border-purple-500/30">
+                      #Hiring
+                    </span>
+                  )}
+                  {(post.author.profile as any)?.statusBadge === 'Student' && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/30">
+                      #Student
+                    </span>
+                  )}
+                  {(post.author.profile as any)?.statusBadge === 'Faculty' && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/30">
+                      #Faculty
+                    </span>
+                  )}
+                  {(post.author.profile as any)?.statusBadge === 'Alumni' && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-teal-500/10 text-teal-600 border border-teal-500/30">
+                      #Alumni
+                    </span>
+                  )}
                 </h4>
                 {post.author.profile?.headline && (
                   <p className="text-xs text-muted-foreground line-clamp-1 max-w-[420px]">

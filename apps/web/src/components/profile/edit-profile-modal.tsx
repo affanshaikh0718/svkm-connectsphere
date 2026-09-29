@@ -94,6 +94,7 @@ export function EditProfileModal({
   const [website, setWebsite] = useState(user?.profile?.website || '');
   const [phoneNumber, setPhoneNumber] = useState(user?.profile?.phoneNumber || '');
   const [coverImageUrl, setCoverImageUrl] = useState(user?.profile?.coverImageUrl || '');
+  const [statusBadge, setStatusBadge] = useState<string>(user?.profile?.statusBadge || '');
 
   // Skills multi-select state
   const initialSkills = (user?.profile?.skills || []).map(
@@ -162,6 +163,10 @@ export function EditProfileModal({
       else payload.phoneNumber = '';
 
       if (coverImageUrl) payload.coverImageUrl = coverImageUrl;
+      payload.statusBadge = statusBadge;
+      if (statusBadge === 'Open to Work') {
+        payload.isOpenToWork = true;
+      }
 
       const updated = await usersService.updateProfile(payload);
 
@@ -185,6 +190,8 @@ export function EditProfileModal({
         website: website.trim(),
         phoneNumber: phoneNumber.trim(),
         coverImageUrl,
+        statusBadge,
+        isOpenToWork: statusBadge === 'Open to Work',
         skills: skills.map((name, i) => ({ id: `skill-${i}`, skill: { name } })),
       };
 
@@ -334,6 +341,38 @@ export function EditProfileModal({
               placeholder="e.g. Student at MPSTME | Full-Stack Developer | AI Enthusiast"
               className="text-xs h-9"
             />
+          </div>
+
+          {/* Status Badge Customization */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Profile Status Badge</Label>
+              <span className="text-[10px] text-muted-foreground">Select a badge to display on your profile & feed cards</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'None', value: '', color: 'border-border text-muted-foreground' },
+                { label: '#OpenToWork', value: 'Open to Work', color: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600' },
+                { label: '#Hiring', value: 'Hiring', color: 'border-purple-500/40 bg-purple-500/10 text-purple-600' },
+                { label: '#Student', value: 'Student', color: 'border-blue-500/40 bg-blue-500/10 text-blue-600' },
+                { label: '#Faculty', value: 'Faculty', color: 'border-amber-500/40 bg-amber-500/10 text-amber-600' },
+                { label: '#Alumni', value: 'Alumni', color: 'border-teal-500/40 bg-teal-500/10 text-teal-600' },
+              ].map((badge) => {
+                const isSelected = statusBadge === badge.value;
+                return (
+                  <button
+                    key={badge.label}
+                    type="button"
+                    onClick={() => setStatusBadge(badge.value)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${badge.color} ${
+                      isSelected ? 'ring-2 ring-primary ring-offset-1 font-bold' : 'opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    {badge.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Bio */}
