@@ -47,15 +47,6 @@ export function middleware(request: NextRequest) {
       (p) => pathname === p || pathname.startsWith(p)
     );
 
-    // Redirect authenticated users away from login/register unless redirected from auth failure
-    const isFromProtected = request.nextUrl.searchParams.has('from');
-    if (isAuthenticated && !isFromProtected && (pathname === '/login' || pathname === '/register')) {
-      const homeUrl = request.nextUrl.clone();
-      homeUrl.pathname = '/home';
-      homeUrl.search = '';
-      return NextResponse.redirect(homeUrl);
-    }
-
     // Redirect unauthenticated users away from protected routes
     if (!isAuthenticated && isAuthPath) {
       const loginUrl = request.nextUrl.clone();

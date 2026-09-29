@@ -60,16 +60,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const hasAuthCookie = typeof document !== 'undefined' && document.cookie.includes('cs_auth=true');
-    const isAuthed = useAuthStore.getState().isAuthenticated;
-    if (isAuthed || hasAuthCookie) {
-      const fromParam = new URLSearchParams(window.location.search).get('from');
-      if (!fromParam || fromParam === '/login') {
-        router.replace('/home');
-      }
-    }
-  }, [router]);
+  const currentUser = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
 
   const handleLogin = async (idVal: string, passVal: string) => {
     if (!idVal || !passVal || isLoading) return;
@@ -139,6 +131,30 @@ export default function LoginPage() {
           <h2 className="text-2xl font-bold tracking-tight">Sign in</h2>
           <p className="text-xs text-muted-foreground">Sign in to your SVKM Professional Network</p>
         </div>
+
+        {/* Active Session Indicator */}
+        {currentUser && (
+          <div className="p-3 bg-secondary/80 rounded-xl border border-border/60 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 truncate">
+              <UserCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span className="truncate">
+                Signed in as <strong className="text-foreground">{currentUser.firstName} {currentUser.lastName}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 ml-2">
+              <Link href="/home" className="text-primary font-semibold hover:underline">
+                Go to Feed →
+              </Link>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="text-muted-foreground hover:text-destructive text-[11px]"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 1-Click Quick Demo Login */}
         <Card className="border-primary/20 bg-primary/5 shadow-none">

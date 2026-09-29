@@ -27,8 +27,14 @@ export const useAuthStore = create<AuthStore>()(
       setAuth: (user, token) =>
         set({ user, accessToken: token, isAuthenticated: true }),
 
-      logout: () =>
-        set({ user: null, accessToken: null, isAuthenticated: false }),
+      logout: () => {
+        if (typeof document !== 'undefined') {
+          document.cookie = 'cs_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        }
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
 
       updateUser: (partial) => {
         const current = get().user;

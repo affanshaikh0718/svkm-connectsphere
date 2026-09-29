@@ -108,7 +108,13 @@ export function Navbar() {
       // Logout even if API fails
     } finally {
       logout();
-      router.push('/login');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth-storage');
+        document.cookie = 'cs_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        window.location.href = '/login';
+      }
       toast.success('Logged out successfully');
     }
   };
