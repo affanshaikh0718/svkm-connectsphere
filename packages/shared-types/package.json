@@ -2,10 +2,7 @@
   "name": "@connectsphere/shared-types",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

@@ -6,6 +6,10 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  ),
   title: {
     default: 'ConnectSphere — SVKM Professional Network',
     template: '%s | ConnectSphere SVKM',
