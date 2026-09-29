@@ -21,6 +21,7 @@ import {
   Loader2,
   Building2,
   ArrowRight,
+  BarChart3,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/stores/auth.store';
@@ -398,6 +399,12 @@ export function Navbar() {
               <Link href={`/in/${user?.username}`} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 View Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/profile/analytics" className="cursor-pointer">
+                <BarChart3 className="mr-2 h-4 w-4 text-primary" />
+                Profile Analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

@@ -25,6 +25,7 @@ const AUTH_PATHS = [
   '/newsletters',
   '/saved-posts',
   '/admin',
+  '/profile',
 ];
 
 export function middleware(request: NextRequest) {

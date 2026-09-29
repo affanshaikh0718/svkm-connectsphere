@@ -49,6 +49,10 @@ export function CommentSection({ postId, initialComments = [] }: CommentSectionP
           ? res
           : Array.isArray(res?.data)
           ? res.data
+          : Array.isArray(res?.data?.data)
+          ? res.data.data
+          : Array.isArray(res?.data?.comments)
+          ? res.data.comments
           : [];
         setComments(list);
       } catch (err) {

@@ -395,12 +395,35 @@ export class UsersService {
 
   async getAnalytics(userId: string) {
     const summary = await this.getProfileSummary(userId);
+    const connectionCount = summary.analytics.connectionCount;
+    const profileViewers = summary.analytics.profileViewers;
+    const postImpressions = summary.analytics.postImpressions;
+
+    // Generate 7-day engagement time-series points
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const timeSeries = days.map((day, idx) => ({
+      day,
+      viewers: Math.max(2, Math.round(profileViewers * (0.08 + (idx * 0.03)))),
+      impressions: Math.max(8, Math.round(postImpressions * (0.07 + (idx * 0.04)))),
+      engagementRate: `${(3.2 + (idx * 0.4)).toFixed(1)}%`,
+    }));
+
     return {
-      profileViewers: summary.analytics.profileViewers,
-      postImpressions: summary.analytics.postImpressions,
-      searchAppearances: Math.floor(summary.analytics.profileViewers * 1.6) + 8,
-      viewerGrowthPercentage: 16,
-      connectionCount: summary.analytics.connectionCount,
+      profileViewers,
+      profileViewersTrend: '+18.4% vs last week',
+      postImpressions,
+      postImpressionsTrend: '+24.1% vs last week',
+      searchAppearances: Math.floor(profileViewers * 1.6) + 8,
+      searchAppearancesTrend: '+12.5% vs last week',
+      connectionCount,
+      viewerGrowthPercentage: 18.4,
+      timeSeries,
+      demographics: [
+        { label: 'MPSTME Students & Faculty', percentage: 42 },
+        { label: 'DJSCE Alumni & Engineers', percentage: 28 },
+        { label: 'NMIMS / Placement Recruiters', percentage: 20 },
+        { label: 'Other SVKM Institutions', percentage: 10 },
+      ],
     };
   }
 

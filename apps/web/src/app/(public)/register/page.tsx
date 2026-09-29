@@ -26,6 +26,33 @@ const SVKM_INSTITUTIONS = [
   'Other SVKM Institution / Industry Recruiter',
 ];
 
+const ROLE_CONFIGS: Record<string, { title: string; subtitle: string; badge: string; benefits: string[] }> = {
+  STUDENT: {
+    title: 'Join SVKM as a Student',
+    subtitle: 'Connect with alumni mentors, discover campus placements, and showcase projects across MPSTME, DJSCE, NMIMS & Mithibai.',
+    badge: 'Student Community',
+    benefits: ['Campus Placements & Internships', 'Alumni Mentorship Network', 'Verified Skill Endorsements'],
+  },
+  ALUMNI: {
+    title: 'Welcome Back, SVKM Alum',
+    subtitle: 'Give back to your alma mater, mentor junior students, hire fresh SVKM talent, and network with fellow alumni.',
+    badge: 'Alumni Network',
+    benefits: ['Hire Top SVKM Graduates', 'Exclusive SVKM Alumni Directory', 'Mentor Current Students'],
+  },
+  FACULTY: {
+    title: 'SVKM Faculty & Staff Onboarding',
+    subtitle: 'Coordinate departmental projects, publish academic announcements, and guide student career development.',
+    badge: 'Faculty Portal',
+    benefits: ['Campus & Department Updates', 'Placement Cell Coordination', 'Academic Research Groups'],
+  },
+  RECRUITER: {
+    title: 'Hire SVKM Talent Directly',
+    subtitle: 'Post jobs, review verified student profiles from top SVKM engineering and management institutions, and hire faster.',
+    badge: 'Recruiter Portal',
+    benefits: ['50,000+ Verified SVKM Students', 'Instant Placement Filtering', 'Direct Messaging with Candidates'],
+  },
+};
+
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,8 +71,11 @@ function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (initialRole && ['STUDENT', 'ALUMNI', 'FACULTY', 'RECRUITER'].includes(initialRole.toUpperCase())) {
-      setRoleType(initialRole.toUpperCase());
+    if (initialRole) {
+      const normalized = initialRole.toUpperCase();
+      if (['STUDENT', 'ALUMNI', 'FACULTY', 'RECRUITER'].includes(normalized)) {
+        setRoleType(normalized);
+      }
     }
     if (initialCollege) {
       const match = SVKM_INSTITUTIONS.find((inst) =>
@@ -54,6 +84,8 @@ function RegisterForm() {
       if (match) setInstitution(match);
     }
   }, [initialRole, initialCollege]);
+
+  const activeConfig = ROLE_CONFIGS[roleType] || ROLE_CONFIGS.STUDENT;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +118,7 @@ function RegisterForm() {
 
   return (
     <div className="w-full max-w-md space-y-6">
-      <div className="text-center space-y-1">
+      <div className="text-center space-y-1.5">
         <Link href="/" className="inline-flex items-center gap-2 mb-2">
           <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-base shadow-sm">
             CS
@@ -98,11 +130,25 @@ function RegisterForm() {
             </span>
           </span>
         </Link>
-        <h2 className="text-2xl font-bold tracking-tight">Join the SVKM Professional Network</h2>
-        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-          <GraduationCap className="h-3.5 w-3.5 text-primary" />
-          100% Free for SVKM Students, Alumni, Faculty & Recruiters
+        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold mb-1">
+          {activeConfig.badge}
+        </div>
+        <h2 className="text-2xl font-bold tracking-tight">{activeConfig.title}</h2>
+        <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+          {activeConfig.subtitle}
         </p>
+
+        {/* Dynamic Role Benefits */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+          {activeConfig.benefits.map((benefit) => (
+            <span
+              key={benefit}
+              className="text-[10px] font-medium bg-secondary/80 text-secondary-foreground px-2 py-0.5 rounded border border-border/40"
+            >
+              ✓ {benefit}
+            </span>
+          ))}
+        </div>
       </div>
 
       <Card className="border-border/60 shadow-sm">

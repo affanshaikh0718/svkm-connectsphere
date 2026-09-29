@@ -253,10 +253,10 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
         </div>
 
         <CardContent className="pt-0 relative px-6 pb-6">
-          {/* Avatar and Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end -mt-16 sm:-mt-20 mb-4 gap-4">
-            <div className="relative group">
-              <Avatar className="h-28 w-28 sm:h-36 sm:w-36 border-4 border-background shadow-md">
+          {/* Avatar and Action Buttons - Clean layered flex layout below banner */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-4">
+            <div className="relative group shrink-0 -mt-14 sm:-mt-18 z-10">
+              <Avatar className="h-28 w-28 sm:h-36 sm:w-36 border-4 border-background shadow-md bg-background">
                 <AvatarImage src={avatarUrl || user.profile?.profilePictureUrl} />
                 <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-primary/10 text-primary">
                   {user.firstName[0]}
@@ -289,8 +289,8 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
               )}
             </div>
 
-            {/* Profile Action Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Profile Action Toolbar - positioned cleanly with flex-wrap */}
+            <div className="relative z-10 flex flex-wrap items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0 sm:self-end">
               {isMe ? (
                 <Button
                   variant="outline"

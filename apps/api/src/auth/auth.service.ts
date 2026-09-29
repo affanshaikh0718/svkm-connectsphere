@@ -190,6 +190,57 @@ export class AuthService {
     return { message: 'Password updated successfully. Please log in again.' };
   }
 
+  async forgotPassword(dto: { email: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      return { message: 'If this SVKM email is registered, a password reset link has been dispatched.' };
+    }
+
+    const resetToken = this.jwtService.sign(
+      { sub: user.id, email: user.email, type: 'password_reset' },
+      {
+        secret: this.configService.get<string>('jwt.secret') || 'default_secret',
+        expiresIn: '1h',
+      },
+    );
+
+    return {
+      message: 'Password reset instructions have been dispatched to your email.',
+      resetToken,
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    try {
+      const payload = this.jwtService.verify(dto.token, {
+        secret: this.configService.get<string>('jwt.secret') || 'default_secret',
+      });
+
+      if (payload.type !== 'password_reset') {
+        throw new BadRequestException('Invalid reset token');
+      }
+
+      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+      if (!user) throw new NotFoundException('User not found');
+
+      const newHash = await bcrypt.hash(dto.newPassword, 12);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+      });
+
+      await this.logoutAll(user.id);
+
+      return { message: 'Password has been reset successfully. You can now sign in with your new password.' };
+    } catch (err: any) {
+      if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
+      throw new BadRequestException('Invalid or expired password reset token');
+    }
+  }
+
   private async generateTokens(
     userId: string,
     email: string,

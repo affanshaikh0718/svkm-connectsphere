@@ -220,7 +220,7 @@ export function LeftSidebar() {
             {/* View all analytics actionable link */}
             <div className="pt-1.5 px-2">
               <Link
-                href="/settings"
+                href="/profile/analytics"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline group"
               >
                 <span>View all analytics</span>
