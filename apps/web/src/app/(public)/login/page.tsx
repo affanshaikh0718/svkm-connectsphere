@@ -9,8 +9,47 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, UserCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const DEMO_ACCOUNTS = [
+  {
+    role: 'Student',
+    name: 'Rohan Mehta',
+    college: 'MPSTME (B.Tech)',
+    identifier: 'rohanmehta',
+    password: 'Password@123',
+    badge: 'Student',
+    color: 'bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900',
+  },
+  {
+    role: 'Alumna',
+    name: 'Ananya Deshmukh',
+    college: 'DJSCE Alumna @ Microsoft',
+    identifier: 'ananyadeshmukh',
+    password: 'Password@123',
+    badge: 'Alumni',
+    color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900',
+  },
+  {
+    role: 'Recruiter',
+    name: 'Vikram Shah',
+    college: 'Campus Lead @ TCS',
+    identifier: 'vikramshah',
+    password: 'Password@123',
+    badge: 'Recruiter',
+    color: 'bg-purple-500/10 text-purple-600 border-purple-200 dark:border-purple-900',
+  },
+  {
+    role: 'Admin',
+    name: 'SVKM Administrator',
+    college: 'Placement Cell Lead',
+    identifier: 'admin@svkm.ac.in',
+    password: 'Admin@123',
+    badge: 'Admin',
+    color: 'bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-900',
+  },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,13 +60,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!identifier || !password || isLoading) return;
+  const handleLogin = async (idVal: string, passVal: string) => {
+    if (!idVal || !passVal || isLoading) return;
 
     try {
       setIsLoading(true);
-      const res = await authService.login({ identifier, password });
+      const res = await authService.login({ identifier: idVal, password: passVal });
       if (res?.user && res?.accessToken) {
         setUser(res.user);
         setAccessToken(res.accessToken);
@@ -41,9 +79,14 @@ export default function LoginPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleLogin(identifier, password);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-1">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-2">
             <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-base shadow-sm">
@@ -60,6 +103,44 @@ export default function LoginPage() {
           <p className="text-xs text-muted-foreground">Sign in to your SVKM Professional Network</p>
         </div>
 
+        {/* 1-Click Quick Demo Login */}
+        <Card className="border-primary/20 bg-primary/5 shadow-none">
+          <CardHeader className="py-3 px-4 pb-2">
+            <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> 1-Click Quick Demo Logins
+            </CardTitle>
+            <CardDescription className="text-[11px]">
+              Click any role to log in immediately with pre-configured SVKM test accounts:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-4 pb-3 pt-0 grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((demo) => (
+              <button
+                key={demo.identifier}
+                type="button"
+                onClick={() => {
+                  setIdentifier(demo.identifier);
+                  setPassword(demo.password);
+                  handleLogin(demo.identifier, demo.password);
+                }}
+                disabled={isLoading}
+                className="flex flex-col text-left p-2.5 rounded-lg border bg-background/80 hover:bg-background hover:border-primary/50 transition-all text-xs group"
+              >
+                <div className="flex items-center justify-between w-full mb-0.5">
+                  <span className="font-semibold truncate text-[11px] group-hover:text-primary">
+                    {demo.name}
+                  </span>
+                  <span className={`text-[9px] px-1 py-0.2 rounded border font-medium ${demo.color}`}>
+                    {demo.badge}
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground truncate">{demo.college}</span>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Regular Login Form */}
         <Card className="border-border/60 shadow-sm">
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 pt-6 text-xs">
