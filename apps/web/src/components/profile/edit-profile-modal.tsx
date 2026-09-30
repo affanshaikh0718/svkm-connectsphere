@@ -163,6 +163,8 @@ export function EditProfileModal({
       const effectiveLastName = lastName.trim() || user?.lastName || '';
 
       const payload: Record<string, any> = {
+        userId: user?.id,
+        id: user?.id,
         firstName: effectiveFirstName,
         lastName: effectiveLastName,
         headline: headline.trim(),

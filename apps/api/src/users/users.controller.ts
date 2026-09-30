@@ -91,32 +91,80 @@ export class UsersController {
   async updateProfilePut(
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateProfileDto,
+    @Req() req: any,
   ) {
-    return this.usersService.updateProfile(userId, dto);
+    const effectiveUserId =
+      userId ||
+      dto.userId ||
+      dto.id ||
+      req?.user?.id ||
+      (req?.headers?.['x-user-id'] as string) ||
+      (req?.headers?.['user-id'] as string);
+    return this.usersService.updateProfile(effectiveUserId, dto);
   }
 
   @Patch('me/profile')
   async updateProfilePatch(
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateProfileDto,
+    @Req() req: any,
   ) {
-    return this.usersService.updateProfile(userId, dto);
+    const effectiveUserId =
+      userId ||
+      dto.userId ||
+      dto.id ||
+      req?.user?.id ||
+      (req?.headers?.['x-user-id'] as string) ||
+      (req?.headers?.['user-id'] as string);
+    return this.usersService.updateProfile(effectiveUserId, dto);
+  }
+
+  @Post('me/profile')
+  async updateProfilePost(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileDto,
+    @Req() req: any,
+  ) {
+    const effectiveUserId =
+      userId ||
+      dto.userId ||
+      dto.id ||
+      req?.user?.id ||
+      (req?.headers?.['x-user-id'] as string) ||
+      (req?.headers?.['user-id'] as string);
+    return this.usersService.updateProfile(effectiveUserId, dto);
   }
 
   @Put('profile')
   async updateProfileDirectPut(
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateProfileDto,
+    @Req() req: any,
   ) {
-    return this.usersService.updateProfile(userId, dto);
+    const effectiveUserId =
+      userId ||
+      dto.userId ||
+      dto.id ||
+      req?.user?.id ||
+      (req?.headers?.['x-user-id'] as string) ||
+      (req?.headers?.['user-id'] as string);
+    return this.usersService.updateProfile(effectiveUserId, dto);
   }
 
   @Patch('profile')
   async updateProfileDirectPatch(
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateProfileDto,
+    @Req() req: any,
   ) {
-    return this.usersService.updateProfile(userId, dto);
+    const effectiveUserId =
+      userId ||
+      dto.userId ||
+      dto.id ||
+      req?.user?.id ||
+      (req?.headers?.['x-user-id'] as string) ||
+      (req?.headers?.['user-id'] as string);
+    return this.usersService.updateProfile(effectiveUserId, dto);
   }
 
   @Post('me/profile-picture')

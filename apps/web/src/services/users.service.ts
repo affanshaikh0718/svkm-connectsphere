@@ -37,7 +37,7 @@ export const usersService = {
       '/users/me/profile',
       data
     );
-    return response.data.data;
+    return (response.data as any)?.data || response.data;
   },
 
   async uploadProfilePicture(file: File): Promise<{ profilePictureUrl: string }> {

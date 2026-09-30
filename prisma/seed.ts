@@ -48,7 +48,8 @@ async function main() {
   const skillNames = [
     'Data Structures & Algorithms', 'TypeScript', 'JavaScript', 'React', 'Next.js',
     'Node.js', 'NestJS', 'PostgreSQL', 'Redis', 'Python', 'FastAPI', 'Docker',
-    'Machine Learning', 'C++', 'Java', 'Git', 'System Design', 'Cloud Computing'
+    'Machine Learning', 'C++', 'Java', 'Git', 'System Design', 'Cloud Computing',
+    'Figma', 'UI/UX Design', 'Product Management', 'Data Science'
   ];
 
   const skillsMap: Record<string, string> = {};
@@ -543,6 +544,58 @@ async function main() {
           { skillId: skillsMap['Docker'] },
           { skillId: skillsMap['PostgreSQL'] },
           { skillId: skillsMap['Git'] },
+        ],
+      },
+    },
+  });
+
+  await prisma.job.create({
+    data: {
+      companyId: placementCell.id,
+      postedById: admin.id,
+      title: 'Associate Product Manager (APM) — Campus Tech Suite',
+      description: 'Drive student lifecycle features, placement portal roadmap, and user discovery interviews across SVKM academic campuses.',
+      responsibilities: 'Formulate PRDs, design user workflows with engineering leads, and analyze student engagement metrics.',
+      requirements: 'Strong analytical skills, familiarity with agile methodologies, wireframing tools, and cross-functional leadership.',
+      benefits: 'Annual CTC (INR 12 LPA - 18 LPA), health cover, structured APM rotational mentorship.',
+      location: 'Mumbai, Maharashtra',
+      locationType: LocationType.HYBRID,
+      employmentType: EmploymentType.FULL_TIME,
+      experienceLevel: ExperienceLevel.ENTRY,
+      salaryMin: 1200000,
+      salaryMax: 1800000,
+      salaryCurrency: 'INR',
+      status: JobStatus.OPEN,
+      skills: {
+        create: [
+          { skillId: skillsMap['Product Management'] },
+          { skillId: skillsMap['System Design'] },
+        ],
+      },
+    },
+  });
+
+  await prisma.job.create({
+    data: {
+      companyId: djLabs.id,
+      postedById: alumniUser.id,
+      title: 'UI/UX & Interaction Design Intern',
+      description: 'Design sleek user interfaces, design systems, and responsive Figma prototypes for student-facing web applications.',
+      responsibilities: 'Build interactive prototypes in Figma, conduct user usability tests with students, and align UI assets with frontend teams.',
+      requirements: 'Proficiency in Figma, design systems, visual hierarchy, and user-centric problem solving.',
+      benefits: 'Monthly stipend (INR 25,000 - 38,000/month), design portfolio features, and letter of recommendation.',
+      location: 'Vile Parle, Mumbai',
+      locationType: LocationType.HYBRID,
+      employmentType: EmploymentType.INTERNSHIP,
+      experienceLevel: ExperienceLevel.ENTRY,
+      salaryMin: 25000,
+      salaryMax: 38000,
+      salaryCurrency: 'INR',
+      status: JobStatus.OPEN,
+      skills: {
+        create: [
+          { skillId: skillsMap['Figma'] },
+          { skillId: skillsMap['UI/UX Design'] },
         ],
       },
     },

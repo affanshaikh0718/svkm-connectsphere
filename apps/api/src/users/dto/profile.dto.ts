@@ -35,7 +35,7 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(20)
+  @MaxLength(100)
   phoneNumber?: string;
 
   @IsString()
@@ -77,9 +77,8 @@ export class UpdateProfileDto {
   @IsOptional()
   isOpenToWork?: boolean;
 
-  @IsArray()
   @IsOptional()
-  openToWorkTypes?: string[];
+  openToWorkTypes?: any;
 
   @IsString()
   @IsOptional()
@@ -106,6 +105,9 @@ export class UpdateProfileDto {
 
   @IsOptional()
   id?: string;
+
+  @IsOptional()
+  userId?: string;
 
   @IsOptional()
   user?: any;

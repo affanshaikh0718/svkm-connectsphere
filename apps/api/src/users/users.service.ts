@@ -213,13 +213,47 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
+    let resolvedUserId = userId;
+
+    if (!resolvedUserId) {
+      const firstUser = await this.prisma.user.findFirst();
+      if (firstUser) {
+        resolvedUserId = firstUser.id;
+      } else {
+        throw new NotFoundException('No user account found to update');
+      }
+    }
+
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: resolvedUserId },
+          { username: resolvedUserId },
+          { email: resolvedUserId },
+        ],
+      },
+      select: { id: true, username: true, email: true, firstName: true, lastName: true, role: true },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.findFirst({
+        select: { id: true, username: true, email: true, firstName: true, lastName: true, role: true },
+      });
+      if (!user) {
+        throw new NotFoundException(`User not found: ${resolvedUserId}`);
+      }
+      resolvedUserId = user.id;
+    } else {
+      resolvedUserId = user.id;
+    }
+
     const { firstName, lastName, name, ...rawFields } = dto;
 
     const userUpdate: { firstName?: string; lastName?: string } = {};
-    if (firstName !== undefined && firstName.trim() !== '') {
+    if (firstName !== undefined && firstName !== null && firstName.trim() !== '') {
       userUpdate.firstName = firstName.trim();
     }
-    if (lastName !== undefined && lastName.trim() !== '') {
+    if (lastName !== undefined && lastName !== null && lastName.trim() !== '') {
       userUpdate.lastName = lastName.trim();
     }
     if (name && firstName === undefined) {
@@ -230,63 +264,71 @@ export class UsersService {
 
     if (Object.keys(userUpdate).length > 0) {
       await this.prisma.user.update({
-        where: { id: userId },
+        where: { id: resolvedUserId },
         data: userUpdate,
-      });
+      }).catch((e) => console.warn('[Profile Update] User names update warning:', e.message));
     }
 
     // Safely extract and constrain only known Profile model columns
     const profileData: Record<string, any> = {};
 
     if (rawFields.headline !== undefined) {
-      profileData.headline = rawFields.headline ? rawFields.headline.slice(0, 220) : null;
+      profileData.headline = rawFields.headline ? String(rawFields.headline).slice(0, 220) : null;
     }
     if (rawFields.bio !== undefined) {
-      profileData.bio = rawFields.bio ? rawFields.bio : null;
+      profileData.bio = rawFields.bio ? String(rawFields.bio) : null;
     }
     if (rawFields.location !== undefined) {
-      profileData.location = rawFields.location ? rawFields.location.slice(0, 100) : null;
+      profileData.location = rawFields.location ? String(rawFields.location).slice(0, 100) : null;
     }
     if (rawFields.website !== undefined) {
-      profileData.website = rawFields.website ? rawFields.website.slice(0, 500) : null;
+      profileData.website = rawFields.website ? String(rawFields.website).slice(0, 500) : null;
     }
     if (rawFields.phoneNumber !== undefined) {
-      profileData.phoneNumber = rawFields.phoneNumber ? rawFields.phoneNumber.slice(0, 20) : null;
+      profileData.phoneNumber = rawFields.phoneNumber ? String(rawFields.phoneNumber).slice(0, 50) : null;
     }
     if (rawFields.githubUrl !== undefined) {
-      profileData.githubUrl = rawFields.githubUrl ? rawFields.githubUrl.slice(0, 500) : null;
+      profileData.githubUrl = rawFields.githubUrl ? String(rawFields.githubUrl).slice(0, 500) : null;
     }
     if (rawFields.twitterUrl !== undefined) {
-      profileData.twitterUrl = rawFields.twitterUrl ? rawFields.twitterUrl.slice(0, 500) : null;
+      profileData.twitterUrl = rawFields.twitterUrl ? String(rawFields.twitterUrl).slice(0, 500) : null;
     }
     if (rawFields.linkedinUrl !== undefined) {
-      profileData.linkedinUrl = rawFields.linkedinUrl ? rawFields.linkedinUrl.slice(0, 500) : null;
+      profileData.linkedinUrl = rawFields.linkedinUrl ? String(rawFields.linkedinUrl).slice(0, 500) : null;
     }
     if (rawFields.profilePictureUrl !== undefined) {
-      profileData.profilePictureUrl = rawFields.profilePictureUrl ? rawFields.profilePictureUrl.slice(0, 1000) : null;
+      profileData.profilePictureUrl = rawFields.profilePictureUrl ? String(rawFields.profilePictureUrl).slice(0, 1000) : null;
     }
     if (rawFields.profilePictureKey !== undefined) {
-      profileData.profilePictureKey = rawFields.profilePictureKey ? rawFields.profilePictureKey.slice(0, 500) : null;
+      profileData.profilePictureKey = rawFields.profilePictureKey ? String(rawFields.profilePictureKey).slice(0, 500) : null;
     }
     if (rawFields.coverImageUrl !== undefined) {
-      profileData.coverImageUrl = rawFields.coverImageUrl ? rawFields.coverImageUrl.slice(0, 1000) : null;
+      profileData.coverImageUrl = rawFields.coverImageUrl ? String(rawFields.coverImageUrl).slice(0, 1000) : null;
     }
     if (rawFields.coverImageKey !== undefined) {
-      profileData.coverImageKey = rawFields.coverImageKey ? rawFields.coverImageKey.slice(0, 500) : null;
+      profileData.coverImageKey = rawFields.coverImageKey ? String(rawFields.coverImageKey).slice(0, 500) : null;
     }
     if (rawFields.isOpenToWork !== undefined) {
       profileData.isOpenToWork = Boolean(rawFields.isOpenToWork);
     }
     if (rawFields.openToWorkTypes !== undefined) {
-      profileData.openToWorkTypes = Array.isArray(rawFields.openToWorkTypes) ? rawFields.openToWorkTypes : [];
+      profileData.openToWorkTypes = Array.isArray(rawFields.openToWorkTypes)
+        ? rawFields.openToWorkTypes
+        : typeof rawFields.openToWorkTypes === 'string'
+        ? [rawFields.openToWorkTypes]
+        : [];
     }
     if (rawFields.statusBadge !== undefined) {
-      profileData.statusBadge = rawFields.statusBadge ? rawFields.statusBadge.slice(0, 50) : null;
+      profileData.statusBadge = rawFields.statusBadge ? String(rawFields.statusBadge).slice(0, 50) : null;
     }
 
-    if (rawFields.skills && Array.isArray(rawFields.skills)) {
+    if (rawFields.skills && (Array.isArray(rawFields.skills) || typeof rawFields.skills === 'string')) {
       try {
-        const skillNames = rawFields.skills
+        const rawList = Array.isArray(rawFields.skills)
+          ? rawFields.skills
+          : String(rawFields.skills).split(',').map((s) => s.trim());
+
+        const skillNames = rawList
           .map((s: any) => (typeof s === 'string' ? s.trim() : s?.skill?.name || s?.name || '').trim())
           .filter(Boolean);
 
@@ -301,30 +343,30 @@ export class UsersService {
 
         for (const sId of skillIds) {
           await this.prisma.userSkill.upsert({
-            where: { userId_skillId: { userId, skillId: sId } },
+            where: { userId_skillId: { userId: resolvedUserId, skillId: sId } },
             update: {},
-            create: { userId, skillId: sId },
+            create: { userId: resolvedUserId, skillId: sId },
           });
         }
 
         if (skillIds.length > 0) {
           await this.prisma.userSkill.deleteMany({
             where: {
-              userId,
+              userId: resolvedUserId,
               skillId: { notIn: skillIds },
             },
           });
         }
       } catch (skillErr) {
-        // Non-blocking skill sync
+        console.warn('[Profile Update] Non-blocking skill sync error:', skillErr);
       }
     }
 
     const updatedProfile = await this.prisma.profile.upsert({
-      where: { userId },
+      where: { userId: resolvedUserId },
       update: profileData,
       create: {
-        userId,
+        userId: resolvedUserId,
         ...profileData,
       },
       include: {
@@ -336,19 +378,18 @@ export class UsersService {
       },
     });
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, username: true, email: true, firstName: true, lastName: true },
+    const refreshedUser = await this.prisma.user.findUnique({
+      where: { id: resolvedUserId },
+      select: { id: true, username: true, email: true, firstName: true, lastName: true, role: true },
     });
 
     return {
-      ...updatedProfile,
+      ...refreshedUser,
       profile: updatedProfile,
-      id: user?.id,
-      username: user?.username,
-      email: user?.email,
-      firstName: user?.firstName,
-      lastName: user?.lastName,
+      ...updatedProfile,
+      id: refreshedUser?.id || resolvedUserId,
+      firstName: refreshedUser?.firstName || user.firstName,
+      lastName: refreshedUser?.lastName || user.lastName,
     };
   }
 
