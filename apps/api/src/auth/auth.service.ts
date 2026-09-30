@@ -15,6 +15,8 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UserStatus } from '@prisma/client';
 
+import { isSvkmEmail, getSvkmDomainError } from './svkm-domains';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -24,6 +26,10 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    if (!isSvkmEmail(dto.email)) {
+      throw new BadRequestException(getSvkmDomainError());
+    }
+
     const existing = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: dto.email }, { username: dto.username }],

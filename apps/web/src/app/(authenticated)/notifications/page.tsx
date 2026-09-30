@@ -36,8 +36,13 @@ export default function NotificationsPage() {
     try {
       setIsLoading(true);
       const res = await notificationsService.getMyNotifications();
-      if (res.data) {
-        setNotifications(res.data);
+      const list = res?.data || (Array.isArray(res) ? res : []);
+      setNotifications(list);
+
+      // Auto-sync: Reset unread notifications on opening alerts panel
+      if (list.some((n: any) => !n.isRead) || unreadCount > 0) {
+        notificationsService.markAllAsRead().catch(() => null);
+        setUnreadCount(0);
       }
     } catch {
       // error

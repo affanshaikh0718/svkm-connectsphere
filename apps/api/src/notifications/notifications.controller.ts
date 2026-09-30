@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Put } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Put } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -17,7 +17,15 @@ export class NotificationsController {
   }
 
   @Put(':id/read')
-  async markAsRead(
+  async markAsReadPut(
+    @CurrentUser('id') userId: string,
+    @Param('id') notificationId: string,
+  ) {
+    return this.notificationsService.markAsRead(notificationId, userId);
+  }
+
+  @Patch(':id/read')
+  async markAsReadPatch(
     @CurrentUser('id') userId: string,
     @Param('id') notificationId: string,
   ) {
@@ -25,7 +33,13 @@ export class NotificationsController {
   }
 
   @Put('read-all')
-  async markAllAsRead(@CurrentUser('id') userId: string) {
+  async markAllAsReadPut(@CurrentUser('id') userId: string) {
+    return this.notificationsService.markAllAsRead(userId);
+  }
+
+  @Patch('read-all')
+  async markAllAsReadPatch(@CurrentUser('id') userId: string) {
     return this.notificationsService.markAllAsRead(userId);
   }
 }
+

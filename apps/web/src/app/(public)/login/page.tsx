@@ -25,40 +25,58 @@ import toast from 'react-hot-toast';
 
 const DEMO_ACCOUNTS = [
   {
-    role: 'Student',
-    name: 'Rohan Mehta',
-    college: 'MPSTME (B.Tech)',
-    identifier: 'rohanmehta',
+    role: 'DJSCE Student',
+    name: 'Aarav Sharma',
+    college: 'student@djsce.ac.in',
+    identifier: 'student@djsce.ac.in',
     password: 'Password@123',
-    badge: 'Student',
+    badge: 'DJSCE',
     color: 'bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900',
   },
   {
-    role: 'Alumna',
-    name: 'Ananya Deshmukh',
-    college: 'DJSCE Alumna @ Microsoft',
-    identifier: 'ananyadeshmukh',
+    role: 'MPSTME Faculty',
+    name: 'Prof. Rajesh Verma',
+    college: 'faculty@mpstme.nmims.edu',
+    identifier: 'faculty@mpstme.nmims.edu',
     password: 'Password@123',
-    badge: 'Alumni',
+    badge: 'MPSTME',
+    color: 'bg-indigo-500/10 text-indigo-600 border-indigo-200 dark:border-indigo-900',
+  },
+  {
+    role: 'NM College Alumna',
+    name: 'Pooja Shah',
+    college: 'alumni@nmcollege.in',
+    identifier: 'alumni@nmcollege.in',
+    password: 'Password@123',
+    badge: 'NM College',
     color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900',
   },
   {
-    role: 'Recruiter',
-    name: 'Vikram Shah',
-    college: 'Campus Lead @ TCS',
-    identifier: 'vikramshah',
-    password: 'Password@123',
-    badge: 'Recruiter',
-    color: 'bg-purple-500/10 text-purple-600 border-purple-200 dark:border-purple-900',
-  },
-  {
-    role: 'Admin',
+    role: 'SVKM Admin',
     name: 'SVKM Administrator',
-    college: 'Placement Cell Lead',
+    college: 'admin@svkm.ac.in',
     identifier: 'admin@svkm.ac.in',
     password: 'Admin@123',
     badge: 'Admin',
     color: 'bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-900',
+  },
+  {
+    role: 'MPSTME Student',
+    name: 'Rohan Mehta',
+    college: 'rohan.mehta@svkm.ac.in',
+    identifier: 'rohanmehta',
+    password: 'Password@123',
+    badge: 'Student',
+    color: 'bg-cyan-500/10 text-cyan-600 border-cyan-200 dark:border-cyan-900',
+  },
+  {
+    role: 'DJSCE Alumna',
+    name: 'Ananya Deshmukh',
+    college: 'ananya.deshmukh@alumni.svkm.ac.in',
+    identifier: 'ananyadeshmukh',
+    password: 'Password@123',
+    badge: 'Alumni',
+    color: 'bg-teal-500/10 text-teal-600 border-teal-200 dark:border-teal-900',
   },
 ];
 
@@ -119,10 +137,13 @@ function LoginPageContent() {
 
   const roleParam = searchParams.get('role')?.toLowerCase();
   const collegeParam = searchParams.get('college')?.toLowerCase();
-  const isDevMode =
-    process.env.NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS === 'true' ||
+  const isDevParam =
     searchParams.get('dev') === 'true' ||
     searchParams.get('demo') === 'true';
+  const isDevMode =
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS === 'true' ||
+    process.env.NODE_ENV !== 'production' ||
+    isDevParam;
 
   const roleConfig = roleParam ? ROLE_CUSTOMIZATIONS[roleParam] : null;
   const collegeConfig = collegeParam ? COLLEGE_CUSTOMIZATIONS[collegeParam] : null;
@@ -131,6 +152,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDemoBox, setShowDemoBox] = useState(isDevMode);
 
   const currentUser = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -254,51 +276,65 @@ function LoginPageContent() {
           </div>
         )}
 
-        {/* Demo Accounts (Hidden in production; visible only with NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS=true or ?dev=true / ?demo=true) */}
-        {isDevMode && (
-          <Card className="border-primary/30 bg-primary/5 shadow-none">
-            <CardHeader className="py-3 px-4 pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-primary">
-                  <Sparkles className="h-3.5 w-3.5" /> 1-Click Quick Demo Logins
-                </CardTitle>
-                <Badge variant="outline" className="text-[9px] px-1 py-0 text-primary border-primary/30">
-                  DEV MODE
-                </Badge>
-              </div>
-              <CardDescription className="text-[11px]">
-                Pre-configured SVKM test accounts (visible in dev mode):
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 pb-3 pt-0 grid grid-cols-2 gap-2">
-              {DEMO_ACCOUNTS.map((demo) => (
-                <button
-                  key={demo.identifier}
-                  type="button"
-                  onClick={() => {
-                    setIdentifier(demo.identifier);
-                    setPassword(demo.password);
-                    handleLogin(demo.identifier, demo.password);
-                  }}
-                  disabled={isLoading}
-                  className="flex flex-col text-left p-2.5 rounded-lg border bg-background/80 hover:bg-background hover:border-primary/50 transition-all text-xs group"
-                >
-                  <div className="flex items-center justify-between w-full mb-0.5">
-                    <span className="font-semibold truncate text-[11px] group-hover:text-primary">
-                      {demo.name}
-                    </span>
-                    <span
-                      className={`text-[9px] px-1 py-0.2 rounded border font-medium ${demo.color}`}
-                    >
-                      {demo.badge}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground truncate">{demo.college}</span>
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+        {/* Institutional Demo Accounts (Dev Mode / 1-Click Fast Login) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <button
+              type="button"
+              onClick={() => setShowDemoBox(!showDemoBox)}
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {showDemoBox ? 'Hide Demo Logins' : '1-Click Institutional Demo Logins (DJSCE, MPSTME, NMIMS...)'}
+            </button>
+            <span className="text-[10px] text-muted-foreground font-mono">?demo=true</span>
+          </div>
+
+          {showDemoBox && (
+            <Card className="border-primary/30 bg-primary/5 shadow-none animate-in fade-in duration-200">
+              <CardHeader className="py-3 px-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-primary">
+                    <Sparkles className="h-3.5 w-3.5" /> SVKM Institutional Accounts
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-primary border-primary/30">
+                    QUICK ACCESS
+                  </Badge>
+                </div>
+                <CardDescription className="text-[11px]">
+                  Click any verified SVKM test account to sign in immediately:
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-4 pb-3 pt-0 grid grid-cols-2 gap-2">
+                {DEMO_ACCOUNTS.map((demo) => (
+                  <button
+                    key={demo.identifier}
+                    type="button"
+                    onClick={() => {
+                      setIdentifier(demo.identifier);
+                      setPassword(demo.password);
+                      handleLogin(demo.identifier, demo.password);
+                    }}
+                    disabled={isLoading}
+                    className="flex flex-col text-left p-2.5 rounded-lg border bg-background/80 hover:bg-background hover:border-primary/50 transition-all text-xs group shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between w-full mb-0.5">
+                      <span className="font-semibold truncate text-[11px] group-hover:text-primary">
+                        {demo.name}
+                      </span>
+                      <span
+                        className={`text-[9px] px-1 py-0.2 rounded border font-medium ${demo.color}`}
+                      >
+                        {demo.badge}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground truncate font-mono">{demo.college}</span>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Regular Login Form */}
         <Card className="border-border/60 shadow-sm">

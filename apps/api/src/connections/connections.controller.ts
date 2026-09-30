@@ -63,6 +63,38 @@ export class ConnectionsController {
     return this.connectionsService.rejectRequest(userId, connectionId);
   }
 
+  @Put(':id/cancel')
+  async cancelRequestPut(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.connectionsService.cancelRequest(userId, id);
+  }
+
+  @Delete('requests/:id')
+  async cancelRequestDelete(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.connectionsService.cancelRequest(userId, id);
+  }
+
+  @Delete('pending/:id')
+  async cancelPendingDelete(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.connectionsService.cancelRequest(userId, id);
+  }
+
+  @Delete('request/:userId')
+  async cancelRequestByUserDelete(
+    @CurrentUser('id') userId: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.connectionsService.cancelRequest(userId, targetUserId);
+  }
+
   @Delete(':userId')
   async removeConnection(
     @CurrentUser('id') userId: string,

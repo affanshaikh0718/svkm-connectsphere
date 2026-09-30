@@ -24,8 +24,12 @@ export const connectionsService = {
     await apiClient.delete(`/connections/${connectionId}`);
   },
 
-  async withdrawConnectionRequest(connectionId: string): Promise<void> {
-    await apiClient.delete(`/connections/${connectionId}`);
+  async withdrawConnectionRequest(connectionIdOrUserId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/connections/requests/${connectionIdOrUserId}`);
+    } catch {
+      await apiClient.delete(`/connections/${connectionIdOrUserId}`);
+    }
   },
 
   async getConnectionStatus(userId: string): Promise<{ status: ConnectionStatus; connectionId?: string }> {

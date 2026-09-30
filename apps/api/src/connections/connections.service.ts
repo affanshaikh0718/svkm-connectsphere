@@ -139,20 +139,46 @@ export class ConnectionsService {
     });
   }
 
-  async removeConnection(userId: string, targetUserId: string) {
+  async cancelRequest(userId: string, targetId: string) {
     const conn = await this.prisma.connection.findFirst({
       where: {
         OR: [
-          { requesterId: userId, addresseeId: targetUserId, status: ConnectionStatus.ACCEPTED },
-          { requesterId: targetUserId, addresseeId: userId, status: ConnectionStatus.ACCEPTED },
+          { id: targetId, requesterId: userId },
+          { addresseeId: targetId, requesterId: userId },
         ],
       },
     });
 
-    if (!conn) throw new NotFoundException('Active connection not found');
+    if (!conn) {
+      throw new NotFoundException('Pending connection request not found');
+    }
+
+    await this.prisma.notification.deleteMany({
+      where: {
+        entityId: conn.id,
+        entityType: EntityType.CONNECTION,
+      },
+    }).catch(() => null);
 
     await this.prisma.connection.delete({ where: { id: conn.id } });
-    return { message: 'Connection removed successfully' };
+    return { success: true, message: 'Connection request withdrawn successfully' };
+  }
+
+  async removeConnection(userId: string, targetUserId: string) {
+    const conn = await this.prisma.connection.findFirst({
+      where: {
+        OR: [
+          { requesterId: userId, addresseeId: targetUserId },
+          { requesterId: targetUserId, addresseeId: userId },
+          { id: targetUserId },
+        ],
+      },
+    });
+
+    if (!conn) throw new NotFoundException('Connection record not found');
+
+    await this.prisma.connection.delete({ where: { id: conn.id } });
+    return { success: true, message: 'Connection removed successfully' };
   }
 
   async getMyConnections(userId: string) {

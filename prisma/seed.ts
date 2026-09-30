@@ -286,6 +286,81 @@ async function main() {
     },
   });
 
+  // 6b. Institutional Demo Accounts for SVKM Colleges:
+  // DJSCE Student Demo Account
+  const djsceStudent = await prisma.user.create({
+    data: {
+      email: 'student@djsce.ac.in',
+      username: 'djsce_student',
+      firstName: 'Aarav',
+      lastName: 'Sharma',
+      passwordHash,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      profile: {
+        create: {
+          headline: 'Third Year Computer Engineering Student @ DJSCE | Hackathon Winner',
+          bio: 'Undergraduate at Dwarkadas J. Sanghvi College of Engineering (DJSCE). Active participant in ACM and DJ Unicode.',
+          location: 'Vile Parle, Mumbai',
+          statusBadge: 'Student',
+          isOpenToWork: true,
+          openToWorkTypes: ['INTERNSHIP'],
+        },
+      },
+      privacySettings: { create: {} },
+    },
+  });
+
+  // MPSTME Faculty Demo Account
+  const mpstmeFaculty = await prisma.user.create({
+    data: {
+      email: 'faculty@mpstme.nmims.edu',
+      username: 'mpstme_faculty',
+      firstName: 'Prof. Rajesh',
+      lastName: 'Verma',
+      passwordHash,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      profile: {
+        create: {
+          headline: 'Assistant Professor, Dept of IT @ MPSTME, NMIMS | Research Lead',
+          bio: 'Faculty advisor for Cloud Computing and Distributed Systems at MPSTME, NMIMS University.',
+          location: 'Vile Parle West, Mumbai',
+          statusBadge: 'Faculty',
+        },
+      },
+      privacySettings: { create: {} },
+    },
+  });
+
+  // NM College Alumni Demo Account
+  const nmAlumni = await prisma.user.create({
+    data: {
+      email: 'alumni@nmcollege.in',
+      username: 'nm_alumni',
+      firstName: 'Pooja',
+      lastName: 'Shah',
+      passwordHash,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      profile: {
+        create: {
+          headline: 'Investment Banking Analyst @ Goldman Sachs | NM College Alumna',
+          bio: 'Narsee Monjee College of Commerce and Economics Alumna. Mentoring SVKM finance and tech students.',
+          location: 'Mumbai, Maharashtra',
+          statusBadge: 'Alumni',
+        },
+      },
+      privacySettings: { create: {} },
+    },
+  });
+
   // Attach skills
   await prisma.userSkill.createMany({
     data: [
@@ -498,6 +573,9 @@ async function main() {
 
   console.log('✅ SVKM Database seeded successfully!');
   console.log('   Admin: admin@svkm.ac.in (Admin@123)');
+  console.log('   DJSCE Student: student@djsce.ac.in (Password@123)');
+  console.log('   MPSTME Faculty: faculty@mpstme.nmims.edu (Password@123)');
+  console.log('   NM College Alum: alumni@nmcollege.in (Password@123)');
   console.log('   Student: rohanmehta (Password@123)');
   console.log('   Alumna: ananyadeshmukh (Password@123)');
   console.log('   Faculty: drkavitapatil (Password@123)');

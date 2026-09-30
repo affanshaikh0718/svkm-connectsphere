@@ -53,6 +53,8 @@ const ROLE_CONFIGS: Record<string, { title: string; subtitle: string; badge: str
   },
 };
 
+import { isSvkmEmail, getSvkmDomainError, SVKM_ALLOWED_DOMAINS } from '@/lib/svkm-domains';
+
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,6 +71,9 @@ function RegisterForm() {
   const [institution, setInstitution] = useState(SVKM_INSTITUTIONS[0]);
   const [roleType, setRoleType] = useState('STUDENT');
   const [isLoading, setIsLoading] = useState(false);
+
+  const emailTrimmed = email.trim();
+  const isEmailValidSvkm = emailTrimmed.length > 0 && isSvkmEmail(emailTrimmed);
 
   useEffect(() => {
     if (initialRole) {
@@ -91,13 +96,18 @@ function RegisterForm() {
     e.preventDefault();
     if (!firstName || !lastName || !username || !email || !password || isLoading) return;
 
+    if (!isSvkmEmail(email)) {
+      toast.error(getSvkmDomainError());
+      return;
+    }
+
     try {
       setIsLoading(true);
       const res = await authService.register({
-        firstName,
-        lastName,
-        username,
-        email,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
         password,
         institution,
         roleType,
@@ -207,15 +217,49 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">SVKM or Personal Email</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="email">Official SVKM Institutional Email</Label>
+                {emailTrimmed && (
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${
+                      isEmailValidSvkm
+                        ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/30'
+                        : 'text-amber-600 bg-amber-500/10 border-amber-500/30'
+                    }`}
+                  >
+                    {isEmailValidSvkm ? '✓ Verified SVKM Domain' : 'SVKM Domain Required'}
+                  </span>
+                )}
+              </div>
               <Input
                 id="email"
                 type="email"
-                placeholder="rohan.mehta@svkm.ac.in"
+                placeholder="rohan.mehta@djsce.ac.in or @nmims.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className={
+                  emailTrimmed && !isEmailValidSvkm
+                    ? 'border-amber-500/50 focus-visible:ring-amber-500'
+                    : ''
+                }
               />
+              <div className="flex flex-wrap gap-1 pt-1">
+                <span className="text-[10px] text-muted-foreground mr-1">Allowed:</span>
+                {['@djsce.ac.in', '@nmims.edu', '@mpstme.nmims.edu', '@mithibai.ac.in', '@nmcollege.in', '@svkm.ac.in'].map((dom) => (
+                  <button
+                    key={dom}
+                    type="button"
+                    onClick={() => {
+                      const prefix = email.includes('@') ? email.split('@')[0] : email;
+                      setEmail(`${prefix || 'user'}${dom}`);
+                    }}
+                    className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-muted hover:bg-primary/10 hover:text-primary transition-colors border border-border/40"
+                  >
+                    {dom}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* SVKM College Selection */}

@@ -1,8 +1,19 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength, Validate } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { isSvkmEmail, getSvkmDomainError } from '../svkm-domains';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Must be a valid email address' })
+  @Validate(
+    class {
+      validate(email: string) {
+        return isSvkmEmail(email);
+      }
+      defaultMessage() {
+        return getSvkmDomainError();
+      }
+    }
+  )
   @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 

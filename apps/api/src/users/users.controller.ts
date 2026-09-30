@@ -103,6 +103,22 @@ export class UsersController {
     return this.usersService.updateProfile(userId, dto);
   }
 
+  @Put('profile')
+  async updateProfileDirectPut(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(userId, dto);
+  }
+
+  @Patch('profile')
+  async updateProfileDirectPatch(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(userId, dto);
+  }
+
   @Post('me/profile-picture')
   @UseInterceptors(
     FileInterceptor('file', {
