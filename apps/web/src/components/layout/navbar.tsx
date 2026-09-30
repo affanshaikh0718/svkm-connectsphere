@@ -424,6 +424,10 @@ export function Navbar() {
           {/* Notifications */}
           <Link
             href="/notifications"
+            onClick={() => {
+              setUnreadCount(0);
+              notificationsService.markAllAsRead().catch(() => null);
+            }}
             className={cn(
               'relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-xs transition-colors',
               pathname === '/notifications'
