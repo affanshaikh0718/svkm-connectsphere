@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommentDto, CreatePostDto, ReportPostDto, UpdatePostDto } from './dto/post.dto';
-import { EntityType, NotificationType, PostVisibility, ReportCategory } from '@prisma/client';
+import { EntityType, NotificationType, PostVisibility, ReportCategory, UserRole } from '@prisma/client';
 
 @Injectable()
 export class PostsService {
@@ -243,11 +243,11 @@ export class PostsService {
     return { isLiked: true };
   }
 
-  async getComments(postId: string, cursor?: string, limit = 50) {
+  async getComments(postId: string, cursor?: string, limit = 50, currentUserId?: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isDeleted) throw new NotFoundException('Post not found');
 
-    return this.prisma.comment.findMany({
+    const comments = await this.prisma.comment.findMany({
       where: {
         postId,
         isDeleted: false,
@@ -267,10 +267,110 @@ export class PostsService {
             },
           },
         },
+        likes: currentUserId
+          ? { where: { userId: currentUserId }, select: { userId: true } }
+          : false,
+        _count: {
+          select: { likes: true, replies: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: Number(limit) || 50,
     });
+
+    return comments.map((c: any) => ({
+      ...c,
+      isLiked: Array.isArray(c.likes) && c.likes.length > 0,
+      likeCount: c.likeCount || c._count?.likes || 0,
+      replyCount: c._count?.replies || 0,
+    }));
+  }
+
+  async likeComment(userId: string, postId: string, commentId: string) {
+    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment || comment.isDeleted) throw new NotFoundException('Comment not found');
+
+    const existing = await this.prisma.commentLike.findUnique({
+      where: { userId_commentId: { userId, commentId } },
+    });
+
+    if (!existing) {
+      await this.prisma.commentLike.create({
+        data: { userId, commentId },
+      });
+      await this.prisma.comment.update({
+        where: { id: commentId },
+        data: { likeCount: { increment: 1 } },
+      });
+    }
+
+    const updated = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    return { isLiked: true, likeCount: updated?.likeCount || 1 };
+  }
+
+  async unlikeComment(userId: string, postId: string, commentId: string) {
+    const existing = await this.prisma.commentLike.findUnique({
+      where: { userId_commentId: { userId, commentId } },
+    });
+
+    if (existing) {
+      await this.prisma.commentLike.delete({
+        where: { userId_commentId: { userId, commentId } },
+      });
+      const current = await this.prisma.comment.findUnique({ where: { id: commentId } });
+      if (current && current.likeCount > 0) {
+        await this.prisma.comment.update({
+          where: { id: commentId },
+          data: { likeCount: { decrement: 1 } },
+        });
+      }
+    }
+
+    const updated = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    return { isLiked: false, likeCount: updated?.likeCount || 0 };
+  }
+
+  async toggleCommentLike(userId: string, postId: string, commentId: string) {
+    const existing = await this.prisma.commentLike.findUnique({
+      where: { userId_commentId: { userId, commentId } },
+    });
+    if (existing) {
+      return this.unlikeComment(userId, postId, commentId);
+    }
+    return this.likeComment(userId, postId, commentId);
+  }
+
+  async deleteComment(userId: string, postId: string, commentId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { post: { select: { authorId: true } } },
+    });
+    if (!comment || comment.isDeleted) throw new NotFoundException('Comment not found');
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const isAuthor = comment.authorId === userId;
+    const isPostAuthor = comment.post?.authorId === userId;
+    const isAdmin = user?.role === UserRole.ADMIN;
+
+    if (!isAuthor && !isPostAuthor && !isAdmin) {
+      throw new ForbiddenException('You do not have permission to delete this comment');
+    }
+
+    await this.prisma.comment.update({
+      where: { id: commentId },
+      data: { isDeleted: true },
+    });
+
+    const targetPostId = postId || comment.postId;
+    const post = await this.prisma.post.findUnique({ where: { id: targetPostId } });
+    if (post && post.commentCount > 0) {
+      await this.prisma.post.update({
+        where: { id: targetPostId },
+        data: { commentCount: { decrement: 1 } },
+      });
+    }
+
+    return { success: true, message: 'Comment deleted successfully' };
   }
 
   async addComment(userId: string, postId: string, dto: CreateCommentDto) {

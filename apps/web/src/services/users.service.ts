@@ -25,8 +25,8 @@ export const usersService = {
   async recordProfileView(usernameOrId: string): Promise<void> {
     try {
       await apiClient.post(`/users/${usernameOrId}/view`);
-    } catch {
-      // Non-blocking view logging
+    } catch (err) {
+      console.warn('[Profile View] View tracking request failed:', err);
     }
   },
 

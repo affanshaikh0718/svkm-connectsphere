@@ -276,78 +276,18 @@ function LoginPageContent() {
           </div>
         )}
 
-        {/* Institutional Demo Accounts (Dev Mode / 1-Click Fast Login) */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <button
-              type="button"
-              onClick={() => setShowDemoBox(!showDemoBox)}
-              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {showDemoBox ? 'Hide Demo Logins' : '1-Click Institutional Demo Logins (DJSCE, MPSTME, NMIMS...)'}
-            </button>
-            <span className="text-[10px] text-muted-foreground font-mono">?demo=true</span>
-          </div>
-
-          {showDemoBox && (
-            <Card className="border-primary/30 bg-primary/5 shadow-none animate-in fade-in duration-200">
-              <CardHeader className="py-3 px-4 pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-primary">
-                    <Sparkles className="h-3.5 w-3.5" /> SVKM Institutional Accounts
-                  </CardTitle>
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-primary border-primary/30">
-                    QUICK ACCESS
-                  </Badge>
-                </div>
-                <CardDescription className="text-[11px]">
-                  Click any verified SVKM test account to sign in immediately:
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 pb-3 pt-0 grid grid-cols-2 gap-2">
-                {DEMO_ACCOUNTS.map((demo) => (
-                  <button
-                    key={demo.identifier}
-                    type="button"
-                    onClick={() => {
-                      setIdentifier(demo.identifier);
-                      setPassword(demo.password);
-                      handleLogin(demo.identifier, demo.password);
-                    }}
-                    disabled={isLoading}
-                    className="flex flex-col text-left p-2.5 rounded-lg border bg-background/80 hover:bg-background hover:border-primary/50 transition-all text-xs group shadow-2xs"
-                  >
-                    <div className="flex items-center justify-between w-full mb-0.5">
-                      <span className="font-semibold truncate text-[11px] group-hover:text-primary">
-                        {demo.name}
-                      </span>
-                      <span
-                        className={`text-[9px] px-1 py-0.2 rounded border font-medium ${demo.color}`}
-                      >
-                        {demo.badge}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground truncate font-mono">{demo.college}</span>
-                  </button>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
         {/* Regular Login Form */}
         <Card className="border-border/60 shadow-sm">
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 pt-6 text-xs">
               <div className="space-y-1.5">
                 <Label htmlFor="identifier">
-                  {roleConfig ? `${roleConfig.badge} Email or Username` : 'Email or Username'}
+                  {roleConfig ? `${roleConfig.badge} SVKM Email or Username` : 'SVKM Institutional Email or Username'}
                 </Label>
                 <Input
                   id="identifier"
                   type="text"
-                  placeholder={roleConfig?.placeholder || 'name@svkm.ac.in or username'}
+                  placeholder={roleConfig?.placeholder || 'e.g. student@djsce.ac.in, faculty@mpstme.nmims.edu'}
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   required
@@ -397,6 +337,66 @@ function LoginPageContent() {
             </CardFooter>
           </form>
         </Card>
+
+        {/* Institutional 1-Click Quick Demo Sign-in */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <button
+              type="button"
+              onClick={() => setShowDemoBox(!showDemoBox)}
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5 transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {showDemoBox ? 'Hide Demo Logins' : '1-Click Institutional Demo Logins (DJSCE, MPSTME, NMIMS)'}
+            </button>
+            <span className="text-[10px] text-muted-foreground font-mono">?demo=true</span>
+          </div>
+
+          {showDemoBox && (
+            <Card className="border-primary/30 bg-primary/5 shadow-none animate-in fade-in duration-200">
+              <CardHeader className="py-3 px-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-primary">
+                    <Sparkles className="h-3.5 w-3.5" /> Verified Institutional Accounts
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-primary border-primary/30">
+                    TEST ACCOUNTS
+                  </Badge>
+                </div>
+                <CardDescription className="text-[11px]">
+                  Select any verified SVKM test profile to authenticate immediately:
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-4 pb-3 pt-0 grid grid-cols-2 gap-2">
+                {DEMO_ACCOUNTS.map((demo) => (
+                  <button
+                    key={demo.identifier}
+                    type="button"
+                    onClick={() => {
+                      setIdentifier(demo.identifier);
+                      setPassword(demo.password);
+                      handleLogin(demo.identifier, demo.password);
+                    }}
+                    disabled={isLoading}
+                    className="flex flex-col text-left p-2.5 rounded-lg border bg-background/80 hover:bg-background hover:border-primary/50 transition-all text-xs group shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between w-full mb-0.5">
+                      <span className="font-semibold truncate text-[11px] group-hover:text-primary">
+                        {demo.name}
+                      </span>
+                      <span
+                        className={`text-[9px] px-1 py-0.2 rounded border font-medium ${demo.color}`}
+                      >
+                        {demo.badge}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground truncate font-mono">{demo.college}</span>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

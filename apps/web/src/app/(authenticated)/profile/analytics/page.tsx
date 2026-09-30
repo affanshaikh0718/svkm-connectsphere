@@ -23,23 +23,40 @@ import {
   GraduationCap,
   Clock,
   UserCheck,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatTimeAgo } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function ProfileAnalyticsPage() {
   const { user } = useAuthStore();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<'viewers' | 'impressions'>('viewers');
 
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const res = await usersService.getAnalytics();
       setData(res);
-    } catch {
+    } catch (err: any) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to load real-time analytics from server';
+      console.error('[Production Analytics] Live metrics request failed:', {
+        url: err?.config?.url,
+        status: err?.response?.status,
+        message: errMsg,
+      });
+      setError(errMsg);
       toast.error('Failed to load real-time analytics');
     } finally {
       setIsLoading(false);
@@ -50,17 +67,13 @@ export default function ProfileAnalyticsPage() {
     fetchAnalytics();
   }, []);
 
-  const timeSeries = data?.timeSeries || [
-    { day: 'Mon', viewers: 12, impressions: 45 },
-    { day: 'Tue', viewers: 18, impressions: 68 },
-    { day: 'Wed', viewers: 24, impressions: 92 },
-    { day: 'Thu', viewers: 30, impressions: 110 },
-    { day: 'Fri', viewers: 22, impressions: 85 },
-    { day: 'Sat', viewers: 16, impressions: 60 },
-    { day: 'Sun', viewers: 28, impressions: 120 },
-  ];
+  const fallbackDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const timeSeries =
+    data?.timeSeries && data.timeSeries.length > 0
+      ? data.timeSeries
+      : fallbackDays.map((day) => ({ day, viewers: 0, impressions: 0 }));
 
-  const maxVal = Math.max(...timeSeries.map((t: any) => t[activeMetric] || 1));
+  const maxVal = Math.max(1, ...timeSeries.map((t: any) => t[activeMetric] || 0));
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-6">
@@ -105,6 +118,26 @@ export default function ProfileAnalyticsPage() {
         </div>
       </div>
 
+      {/* Error State Banner */}
+      {error && (
+        <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>
+              <strong>Analytics Error:</strong> {error}
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => fetchAnalytics()}
+            className="h-7 text-xs border-destructive/30 hover:bg-destructive/20 gap-1"
+          >
+            <RefreshCw className="h-3 w-3" /> Retry
+          </Button>
+        </div>
+      )}
+
       {/* 4 Top Growth Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Profile Viewers */}
@@ -130,11 +163,11 @@ export default function ProfileAnalyticsPage() {
             ) : (
               <div>
                 <div className="text-2xl font-bold text-foreground">
-                  {data?.profileViewers ?? 24}
+                  {data?.profileViewers ?? 0}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-0.5">
                   <ArrowUpRight className="h-3.5 w-3.5" />
-                  {data?.profileViewersTrend || '+18.4% vs last week'}
+                  {data?.profileViewersTrend || '0% vs prior week'}
                 </div>
               </div>
             )}
@@ -164,11 +197,11 @@ export default function ProfileAnalyticsPage() {
             ) : (
               <div>
                 <div className="text-2xl font-bold text-foreground">
-                  {data?.postImpressions ?? 128}
+                  {data?.postImpressions ?? 0}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-0.5">
                   <ArrowUpRight className="h-3.5 w-3.5" />
-                  {data?.postImpressionsTrend || '+24.1% vs last week'}
+                  {data?.postImpressionsTrend || '0% vs prior week'}
                 </div>
               </div>
             )}
@@ -193,7 +226,7 @@ export default function ProfileAnalyticsPage() {
             ) : (
               <div>
                 <div className="text-2xl font-bold text-foreground">
-                  {data?.connectionCount ?? 12}
+                  {data?.connectionCount ?? 0}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
                   1st-degree SVKM network members
@@ -219,11 +252,11 @@ export default function ProfileAnalyticsPage() {
             ) : (
               <div>
                 <div className="text-2xl font-bold text-foreground">
-                  {data?.searchAppearances ?? 36}
+                  {data?.searchAppearances ?? 0}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-0.5">
                   <ArrowUpRight className="h-3.5 w-3.5" />
-                  {data?.searchAppearancesTrend || '+12.5% this month'}
+                  {data?.searchAppearancesTrend || '0% this month'}
                 </div>
               </div>
             )}
@@ -396,25 +429,33 @@ export default function ProfileAnalyticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pb-5 space-y-3">
-            {(data?.demographics || [
-              { label: 'MPSTME Students & Faculty', percentage: 42 },
-              { label: 'DJSCE Alumni & Engineers', percentage: 28 },
-              { label: 'NMIMS / Placement Recruiters', percentage: 20 },
-              { label: 'Other SVKM Institutions', percentage: 10 },
-            ]).map((demo: any) => (
-              <div key={demo.label} className="space-y-1">
-                <div className="flex justify-between text-xs font-medium">
-                  <span className="text-foreground">{demo.label}</span>
-                  <span className="text-primary font-bold">{demo.percentage}%</span>
-                </div>
-                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full"
-                    style={{ width: `${demo.percentage}%` }}
-                  />
-                </div>
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-2 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-2 w-full" />
               </div>
-            ))}
+            ) : (!data?.demographics || data.demographics.length === 0) ? (
+              <div className="text-center py-6 text-xs text-muted-foreground">
+                No institution demographics recorded yet. Demographics will generate as more campus peers explore your profile.
+              </div>
+            ) : (
+              data.demographics.map((demo: any) => (
+                <div key={demo.label} className="space-y-1">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-foreground">{demo.label}</span>
+                    <span className="text-primary font-bold">{demo.percentage}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{ width: `${demo.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 

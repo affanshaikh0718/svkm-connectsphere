@@ -85,6 +85,30 @@ export class UpdateProfileDto {
   @IsOptional()
   @MaxLength(50)
   statusBadge?: string;
+
+  @IsOptional()
+  skills?: any;
+
+  @IsOptional()
+  avatarUrl?: string;
+
+  @IsOptional()
+  college?: string;
+
+  @IsOptional()
+  institution?: string;
+
+  @IsOptional()
+  department?: string;
+
+  @IsOptional()
+  openToWork?: boolean;
+
+  @IsOptional()
+  id?: string;
+
+  @IsOptional()
+  user?: any;
 }
 
 export class ExperienceDto {

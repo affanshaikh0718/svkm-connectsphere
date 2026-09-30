@@ -494,6 +494,60 @@ async function main() {
     },
   });
 
+  await prisma.job.create({
+    data: {
+      companyId: placementCell.id,
+      postedById: admin.id,
+      title: 'AI & Data Science Research Intern (Python, PyTorch & LLMs)',
+      description: 'Summer fellowship with the SVKM Center for Artificial Intelligence. Collaborate with MPSTME faculty and industry mentors on LLM finetuning, campus retrieval engines, and predictive analytics.',
+      responsibilities: 'Build vector database pipelines, evaluate open-source transformer models, and deploy low-latency inference services with FastAPI.',
+      requirements: 'Open to SVKM undergraduate and postgraduate students. Solid Python fundamentals, linear algebra knowledge, and experience with PyTorch or TensorFlow.',
+      benefits: 'Monthly stipend (INR 30,000 - 50,000/month), co-authorship on research publications, sponsored conference attendance, and placement fast-track nomination.',
+      location: 'MPSTME Campus, Mumbai',
+      locationType: LocationType.HYBRID,
+      employmentType: EmploymentType.INTERNSHIP,
+      experienceLevel: ExperienceLevel.ENTRY,
+      salaryMin: 30000,
+      salaryMax: 50000,
+      salaryCurrency: 'INR',
+      status: JobStatus.OPEN,
+      skills: {
+        create: [
+          { skillId: skillsMap['Python'] },
+          { skillId: skillsMap['Machine Learning'] },
+          { skillId: skillsMap['FastAPI'] },
+        ],
+      },
+    },
+  });
+
+  await prisma.job.create({
+    data: {
+      companyId: djLabs.id,
+      postedById: facultyUser.id,
+      title: 'Cloud Systems & DevOps Engineering Intern',
+      description: 'Hands-on systems internship building containerized microservices and automated CI/CD deployment pipelines for campus student portals.',
+      responsibilities: 'Containerize internal applications using Docker, automate schema migrations with Prisma, and implement Redis caching layers.',
+      requirements: 'Open to DJSCE and MPSTME engineering students. Familiarity with Linux, Docker, Git, and PostgreSQL.',
+      benefits: 'Monthly stipend (INR 20,000 - 35,000/month), letter of recommendation from department head, and direct interviews with campus recruitment partners.',
+      location: 'DJSCE Innovation Center, Mumbai',
+      locationType: LocationType.ON_SITE,
+      employmentType: EmploymentType.INTERNSHIP,
+      experienceLevel: ExperienceLevel.ENTRY,
+      salaryMin: 20000,
+      salaryMax: 35000,
+      salaryCurrency: 'INR',
+      status: JobStatus.OPEN,
+      skills: {
+        create: [
+          { skillId: skillsMap['Docker'] },
+          { skillId: skillsMap['PostgreSQL'] },
+          { skillId: skillsMap['Git'] },
+        ],
+      },
+    },
+  });
+
   // 9. Create Connections
   await prisma.connection.create({
     data: {

@@ -155,6 +155,49 @@ export class PostsController {
     return this.postsService.addComment(userId, id, dto);
   }
 
+  @Post(':id/comments/:commentId/like')
+  async likeComment(
+    @CurrentUser('id') userId: string,
+    @Param('id') postId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.postsService.toggleCommentLike(userId, postId, commentId);
+  }
+
+  @Delete(':id/comments/:commentId/like')
+  async unlikeComment(
+    @CurrentUser('id') userId: string,
+    @Param('id') postId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.postsService.unlikeComment(userId, postId, commentId);
+  }
+
+  @Delete(':id/comments/:commentId')
+  async deleteComment(
+    @CurrentUser('id') userId: string,
+    @Param('id') postId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.postsService.deleteComment(userId, postId, commentId);
+  }
+
+  @Delete('comments/:commentId')
+  async deleteCommentDirect(
+    @CurrentUser('id') userId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.postsService.deleteComment(userId, '', commentId);
+  }
+
+  @Post('comments/:commentId/like')
+  async likeCommentDirect(
+    @CurrentUser('id') userId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.postsService.toggleCommentLike(userId, '', commentId);
+  }
+
   @Post(':id/save')
   async toggleSavePost(
     @CurrentUser('id') userId: string,
