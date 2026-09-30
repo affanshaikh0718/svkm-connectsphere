@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -97,13 +97,30 @@ export function EditProfileModal({
   const [statusBadge, setStatusBadge] = useState<string>(user?.profile?.statusBadge || '');
 
   // Skills multi-select state
-  const initialSkills = (user?.profile?.skills || []).map(
-    (s: any) => s.skill?.name || s.customName || s.name
-  ).filter(Boolean);
-  const [skills, setSkills] = useState<string[]>(initialSkills);
+  const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
+  // Sync state whenever modal is opened or user prop changes
+  useEffect(() => {
+    if (isOpen && user) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+      setHeadline(user.profile?.headline || '');
+      setBio(user.profile?.bio || '');
+      setLocation(user.profile?.location || '');
+      setWebsite(user.profile?.website || '');
+      setPhoneNumber(user.profile?.phoneNumber || '');
+      setCoverImageUrl(user.profile?.coverImageUrl || '');
+      setStatusBadge(user.profile?.statusBadge || '');
+
+      const userSkills = (user.profile?.skills || []).map(
+        (s: any) => s?.skill?.name || s?.customName || s?.name || (typeof s === 'string' ? s : '')
+      ).filter(Boolean);
+      setSkills(userSkills);
+    }
+  }, [isOpen, user]);
 
   const handleAddSkill = (skillToAdd: string) => {
     const trimmed = skillToAdd.trim();
@@ -142,48 +159,28 @@ export function EditProfileModal({
     e.preventDefault();
     try {
       setIsSaving(true);
+      const effectiveFirstName = firstName.trim() || user?.firstName || '';
+      const effectiveLastName = lastName.trim() || user?.lastName || '';
+
       const payload: Record<string, any> = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        firstName: effectiveFirstName,
+        lastName: effectiveLastName,
+        headline: headline.trim(),
+        bio: bio.trim(),
+        location: location.trim(),
+        website: website.trim(),
+        phoneNumber: phoneNumber.trim(),
+        coverImageUrl: coverImageUrl || '',
+        statusBadge: statusBadge || '',
+        isOpenToWork: statusBadge === 'Open to Work',
+        skills: skills,
       };
-
-      if (headline.trim()) payload.headline = headline.trim();
-      else payload.headline = '';
-
-      if (bio.trim()) payload.bio = bio.trim();
-      else payload.bio = '';
-
-      if (location.trim()) payload.location = location.trim();
-      else payload.location = '';
-
-      if (website.trim()) payload.website = website.trim();
-      else payload.website = '';
-
-      if (phoneNumber.trim()) payload.phoneNumber = phoneNumber.trim();
-      else payload.phoneNumber = '';
-
-      if (coverImageUrl) payload.coverImageUrl = coverImageUrl;
-      payload.statusBadge = statusBadge;
-      if (statusBadge === 'Open to Work') {
-        payload.isOpenToWork = true;
-      }
 
       const updated = await usersService.updateProfile(payload);
 
-      // Update skills that are newly added
-      for (const skillName of skills) {
-        if (!initialSkills.includes(skillName)) {
-          try {
-            await usersService.addSkill(skillName);
-          } catch {
-            // Ignore duplicate
-          }
-        }
-      }
-
       const mergedProfile = {
         ...(user?.profile || {}),
-        ...updated,
+        ...((updated as any)?.profile || updated || {}),
         headline: headline.trim(),
         bio: bio.trim(),
         location: location.trim(),
@@ -197,16 +194,16 @@ export function EditProfileModal({
 
       // Update user in auth store
       updateUser({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        firstName: effectiveFirstName,
+        lastName: effectiveLastName,
         profile: mergedProfile,
       });
 
       toast.success('Profile updated successfully!');
       onProfileUpdated?.({
         ...user,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        firstName: effectiveFirstName,
+        lastName: effectiveLastName,
         profile: mergedProfile,
       });
       onClose();

@@ -118,7 +118,16 @@ export default function UserProfilePage() {
       <ProfileHeader
         user={user}
         onProfileUpdated={(updated) => {
-          setUser((prev: any) => ({ ...prev, ...updated }));
+          setUser((prev: any) => ({
+            ...prev,
+            ...updated,
+            profile: {
+              ...(prev?.profile || {}),
+              ...(updated?.profile || {}),
+              ...(updated || {}),
+            },
+          }));
+          fetchProfile();
         }}
       />
 
@@ -153,11 +162,11 @@ export default function UserProfilePage() {
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-foreground">
-                  {analytics?.profileViewers ?? 142}
+                  {analytics?.profileViewers ?? 0}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
                   <TrendingUp className="h-3 w-3" />
-                  <span>+{analytics?.viewerGrowthPercentage ?? 18}% this week</span>
+                  <span>+{analytics?.viewerGrowthPercentage ?? 0}% this week</span>
                 </div>
               </div>
 
@@ -170,11 +179,11 @@ export default function UserProfilePage() {
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-foreground">
-                  {analytics?.postImpressions ?? 840}
+                  {analytics?.postImpressions ?? 0}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
                   <TrendingUp className="h-3 w-3" />
-                  <span>+24% this week</span>
+                  <span>+{analytics?.postImpressions ? 24 : 0}% this week</span>
                 </div>
               </div>
 
@@ -187,11 +196,11 @@ export default function UserProfilePage() {
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-foreground">
-                  {analytics?.searchAppearances ?? 67}
+                  {analytics?.searchAppearances ?? 0}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
                   <TrendingUp className="h-3 w-3" />
-                  <span>+12% this week</span>
+                  <span>+{analytics?.searchAppearances ? 12 : 0}% this week</span>
                 </div>
               </div>
             </div>

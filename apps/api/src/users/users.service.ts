@@ -284,6 +284,42 @@ export class UsersService {
       profileData.statusBadge = rawFields.statusBadge ? rawFields.statusBadge.slice(0, 50) : null;
     }
 
+    if (rawFields.skills && Array.isArray(rawFields.skills)) {
+      try {
+        const skillNames = rawFields.skills
+          .map((s: any) => (typeof s === 'string' ? s.trim() : s?.skill?.name || s?.name || '').trim())
+          .filter(Boolean);
+
+        const skillIds: string[] = [];
+        for (const sName of skillNames) {
+          let sk = await this.prisma.skill.findUnique({ where: { name: sName } });
+          if (!sk) {
+            sk = await this.prisma.skill.create({ data: { name: sName } });
+          }
+          skillIds.push(sk.id);
+        }
+
+        for (const sId of skillIds) {
+          await this.prisma.userSkill.upsert({
+            where: { userId_skillId: { userId, skillId: sId } },
+            update: {},
+            create: { userId, skillId: sId },
+          });
+        }
+
+        if (skillIds.length > 0) {
+          await this.prisma.userSkill.deleteMany({
+            where: {
+              userId,
+              skillId: { notIn: skillIds },
+            },
+          });
+        }
+      } catch (skillErr) {
+        // Non-blocking skill sync
+      }
+    }
+
     const updatedProfile = await this.prisma.profile.upsert({
       where: { userId },
       update: profileData,
@@ -307,6 +343,7 @@ export class UsersService {
 
     return {
       ...updatedProfile,
+      profile: updatedProfile,
       id: user?.id,
       username: user?.username,
       email: user?.email,

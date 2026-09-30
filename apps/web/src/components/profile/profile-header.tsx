@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { connectionsService } from '@/services/connections.service';
@@ -83,6 +83,18 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [isRequestRecModalOpen, setIsRequestRecModalOpen] = useState(false);
   const [isWriteRecModalOpen, setIsWriteRecModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (user.profile?.profilePictureUrl !== undefined) setAvatarUrl(user.profile.profilePictureUrl);
+      if (user.profile?.coverImageUrl !== undefined) setCoverUrl(user.profile.coverImageUrl);
+      if (user.connectionStatus) setConnectionStatus(user.connectionStatus);
+      if (user.isFollowing !== undefined) setIsFollowing(!!user.isFollowing);
+      if (user.isBlocked !== undefined || user.isBlockedByMe !== undefined) {
+        setIsBlocked(!!user.isBlocked || !!user.isBlockedByMe);
+      }
+    }
+  }, [user]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -515,8 +527,13 @@ export function ProfileHeader({ user, onProfileUpdated }: ProfileHeaderProps) {
           onClose={() => setIsEditModalOpen(false)}
           user={user}
           onProfileUpdated={(updated) => {
-            if (updated.profile?.coverImageUrl) {
-              setCoverUrl(updated.profile.coverImageUrl);
+            const nextCover = updated.profile?.coverImageUrl ?? updated.coverImageUrl;
+            if (nextCover !== undefined) {
+              setCoverUrl(nextCover);
+            }
+            const nextAvatar = updated.profile?.profilePictureUrl ?? updated.profilePictureUrl;
+            if (nextAvatar !== undefined) {
+              setAvatarUrl(nextAvatar);
             }
             onProfileUpdated?.(updated);
           }}
