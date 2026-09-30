@@ -206,12 +206,12 @@ export function Navbar() {
   const hasResults = peopleList.length > 0 || jobsList.length > 0 || companiesList.length > 0;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 left-0 right-0 z-40 h-16 glass-nav transition-all duration-200">
       <div className="flex h-full items-center justify-between px-4 max-w-7xl mx-auto gap-4">
         {/* Logo */}
-        <Link href="/home" className="flex items-center gap-2.5 shrink-0">
-          <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground font-black text-lg tracking-tight">CS</span>
+        <Link href="/home" className="flex items-center gap-2.5 shrink-0 group">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-500 flex items-center justify-center shadow-sm group-hover:shadow-glow-sm transition-all">
+            <span className="text-white font-black text-lg tracking-tight">CS</span>
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="font-bold text-base leading-tight text-foreground flex items-center gap-1.5">
